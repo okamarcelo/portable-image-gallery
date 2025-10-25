@@ -1,0 +1,257 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
+
+namespace ImageGallery.Services
+{
+    /// <summary>
+    /// Manages image loading, importing, and file operations.
+    /// Single Responsibility: Handle all image-related file operations.
+    /// </summary>
+    public class ImageManager
+    {
+        private readonly List<BitmapImage> images = new List<BitmapImage>();
+        private readonly List<string> imageFileNames = new List<string>();
+        private readonly string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".heic", ".heif", ".webp" };
+
+        public IReadOnlyList<BitmapImage> Images => images.AsReadOnly();
+        public IReadOnlyList<string> ImageFileNames => imageFileNames.AsReadOnly();
+        
+        public event Action<int, int>? LoadProgressChanged; // current, total
+        public event Action<int, int, int>? ImportProgressChanged; // current, total, errorCount
+        public event Action<string>? LogMessage;
+
+        /// <summary>
+        /// Load all images from the application directory.
+        /// </summary>
+        public async Task LoadImagesAsync()
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    var imageFiles = Directory.GetFiles(appDirectory)
+                        .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                        .ToList();
+
+                    if (imageFiles.Count == 0)
+                    {
+                        LogMessage?.Invoke("No images found in directory");
+                        return;
+                    }
+
+                    LogMessage?.Invoke($"Found {imageFiles.Count} image files");
+                    LoadProgressChanged?.Invoke(0, imageFiles.Count);
+
+                    int loadedCount = 0;
+                    foreach (var file in imageFiles)
+                    {
+                        try
+                        {
+                            var bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmap.UriSource = new Uri(file);
+                            bitmap.EndInit();
+                            bitmap.Freeze();
+
+                            images.Add(bitmap);
+                            imageFileNames.Add(Path.GetFileName(file));
+                            loadedCount++;
+                            LoadProgressChanged?.Invoke(loadedCount, imageFiles.Count);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogMessage?.Invoke($"Error loading {Path.GetFileName(file)}: {ex.Message}");
+                            loadedCount++;
+                            LoadProgressChanged?.Invoke(loadedCount, imageFiles.Count);
+                        }
+                    }
+
+                    LogMessage?.Invoke($"Successfully loaded {images.Count} images");
+                }
+                catch (Exception ex)
+                {
+                    LogMessage?.Invoke($"Error loading images: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Import images from all "_" folders found recursively.
+        /// </summary>
+        public async Task<int> ImportImagesAsync()
+        {
+            int importedCount = 0;
+            
+            await Task.Run(() =>
+            {
+                try
+                {
+                    string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    LogMessage?.Invoke("Searching for '_' folders...");
+
+                    var underscoreFolders = new List<string>();
+                    int accessDeniedCount = 0;
+                    FindUnderscoreFoldersRecursive(appDirectory, underscoreFolders, ref accessDeniedCount);
+
+                    if (accessDeniedCount > 0)
+                    {
+                        LogMessage?.Invoke($"Access denied to {accessDeniedCount} folder(s)");
+                    }
+
+                    if (underscoreFolders.Count == 0)
+                    {
+                        LogMessage?.Invoke("No '_' folders found");
+                        return;
+                    }
+
+                    LogMessage?.Invoke($"Found {underscoreFolders.Count} '_' folders");
+
+                    // Collect all image files
+                    var allFiles = new List<string>();
+                    foreach (var folder in underscoreFolders)
+                    {
+                        try
+                        {
+                            var files = Directory.GetFiles(folder)
+                                .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                                .ToList();
+                            allFiles.AddRange(files);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogMessage?.Invoke($"Error reading folder {folder}: {ex.Message}");
+                        }
+                    }
+
+                    if (allFiles.Count == 0)
+                    {
+                        LogMessage?.Invoke("No images found in '_' folders");
+                        return;
+                    }
+
+                    LogMessage?.Invoke($"Found {allFiles.Count} files to import");
+                    ImportProgressChanged?.Invoke(0, allFiles.Count, 0);
+
+                    // Import files with duplicate detection
+                    var existingHashes = new HashSet<string>();
+                    var existingFiles = Directory.GetFiles(appDirectory)
+                        .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()));
+
+                    foreach (var file in existingFiles)
+                    {
+                        try
+                        {
+                            string hash = GetFileHash(file);
+                            existingHashes.Add(hash);
+                        }
+                        catch { }
+                    }
+
+                    int importErrors = 0;
+                    foreach (var sourceFile in allFiles)
+                    {
+                        try
+                        {
+                            string hash = GetFileHash(sourceFile);
+                            if (!existingHashes.Contains(hash))
+                            {
+                                string extension = Path.GetExtension(sourceFile);
+                                string newFileName = $"{Guid.NewGuid()}{extension}";
+                                string destPath = Path.Combine(appDirectory, newFileName);
+                                File.Copy(sourceFile, destPath, false);
+                                existingHashes.Add(hash);
+                                importedCount++;
+                                LogMessage?.Invoke($"Imported: {Path.GetFileName(sourceFile)} -> {newFileName}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            importErrors++;
+                            LogMessage?.Invoke($"Error importing {Path.GetFileName(sourceFile)}: {ex.Message}");
+                        }
+
+                        ImportProgressChanged?.Invoke(importedCount + importErrors, allFiles.Count, importErrors);
+                    }
+
+                    LogMessage?.Invoke($"Import complete: {importedCount} files imported, {importErrors} errors");
+                }
+                catch (Exception ex)
+                {
+                    LogMessage?.Invoke($"Error during import: {ex.Message}");
+                }
+            });
+
+            return importedCount;
+        }
+
+        /// <summary>
+        /// Delete all image files in the application directory.
+        /// </summary>
+        public void DeleteAllImages()
+        {
+            try
+            {
+                string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                var imageFiles = Directory.GetFiles(appDirectory)
+                    .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()));
+
+                foreach (var file in imageFiles)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                        LogMessage?.Invoke($"Deleted: {Path.GetFileName(file)}");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage?.Invoke($"Error deleting {Path.GetFileName(file)}: {ex.Message}");
+                    }
+                }
+
+                LogMessage?.Invoke("All images deleted");
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Error deleting images: {ex.Message}");
+            }
+        }
+
+        private void FindUnderscoreFoldersRecursive(string directory, List<string> results, ref int accessDeniedCount)
+        {
+            try
+            {
+                foreach (var subDir in Directory.GetDirectories(directory))
+                {
+                    if (Path.GetFileName(subDir) == "_")
+                    {
+                        results.Add(subDir);
+                    }
+                    FindUnderscoreFoldersRecursive(subDir, results, ref accessDeniedCount);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                accessDeniedCount++;
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Error scanning {directory}: {ex.Message}");
+            }
+        }
+
+        private string GetFileHash(string filePath)
+        {
+            using var sha256 = SHA256.Create();
+            using var stream = File.OpenRead(filePath);
+            byte[] hash = sha256.ComputeHash(stream);
+            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        }
+    }
+}
