@@ -31,10 +31,21 @@ public class DebugLogger
             
             if (logTextBlock != null)
             {
-                logTextBlock.Text = logBuilder.ToString();
+                // Ensure we're on the UI thread
+                if (logTextBlock.Dispatcher.CheckAccess())
+                {
+                    logTextBlock.Text = logBuilder.ToString();
+                    AutoScrollToBottom();
+                }
+                else
+                {
+                    logTextBlock.Dispatcher.InvokeAsync(() =>
+                    {
+                        logTextBlock.Text = logBuilder.ToString();
+                        AutoScrollToBottom();
+                    });
+                }
             }
-
-            AutoScrollToBottom();
         }
 
         public void Toggle()

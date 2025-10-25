@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageGallery.Services;
+using Serilog;
 
 namespace ImageGallery;
 
@@ -29,11 +30,15 @@ public partial class MainWindow : Window
         private WindowState previousWindowState;
         private WindowStyle previousWindowStyle;
 
-        public MainWindow()
+    public MainWindow()
+    {
+        try
         {
+            Log.Information("MainWindow initializing");
             InitializeComponent();
 
             // Initialize services
+            Log.Debug("Creating service instances");
             imageManager = new ImageManager();
             zoomController = new ZoomController();
             mosaicManager = new MosaicManager();
@@ -43,13 +48,22 @@ public partial class MainWindow : Window
             indicatorManager = new IndicatorManager();
 
             // Wire up event handlers
+            Log.Debug("Setting up event handlers");
             SetupEventHandlers();
 
             // Setup mouse handler for window dragging
             this.MouseLeftButtonDown += MainWindow_MouseLeftButtonDown;
+            
+            Log.Information("MainWindow initialized successfully");
         }
-
-        private void SetupEventHandlers()
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Failed to initialize MainWindow");
+            MessageBox.Show($"Failed to initialize application:\n{ex.Message}", "Initialization Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+            throw;
+        }
+    }        private void SetupEventHandlers()
         {
             // ImageManager events
             imageManager.LoadProgressChanged += (current, total) =>
@@ -102,8 +116,12 @@ public partial class MainWindow : Window
             pauseController.LogMessage += msg => debugLogger.Log(msg);
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
         {
+            Log.Information("Window loaded, initializing UI components");
+            
             // Initialize UI references
             debugLogger.Initialize(DebugConsole, LogTextBlock);
             pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
@@ -111,12 +129,15 @@ public partial class MainWindow : Window
             zoomController.Initialize(MosaicScaleTransform, MosaicTranslateTransform);
 
             debugLogger.Log("Application started");
+            Log.Debug("UI components initialized");
 
             // Load images
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
 
+            Log.Information("Starting image loading");
             await imageManager.LoadImagesAsync();
+            Log.Information($"Image loading completed. Found {imageManager.Images.Count} images");
 
             if (imageManager.Images.Count > 0)
             {
@@ -125,14 +146,21 @@ public partial class MainWindow : Window
                 ShowImage(0);
                 slideshowController.Start();
                 LoadingOverlay.Visibility = Visibility.Collapsed;
+                Log.Information("Slideshow started");
             }
             else
             {
                 LoadingText.Text = "No images found. Press I to import from '_' folders.";
+                Log.Warning("No images found in directory");
             }
         }
-
-        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during window load");
+            MessageBox.Show($"Error loading application:\n{ex.Message}", "Load Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // Allow dragging window when not in fullscreen and not zoomed
             if (!isFullscreen && !zoomController.IsZoomed)
