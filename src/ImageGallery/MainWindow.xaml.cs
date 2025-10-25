@@ -150,8 +150,12 @@ public partial class MainWindow : Window
             }
             else
             {
-                LoadingText.Text = "No images found. Press I to import from '_' folders.";
+                LoadingText.Text = "No images found. Select a root directory to search for '_' folders.";
                 Log.Warning("No images found in directory");
+                
+                // Automatically show folder selection dialog
+                LoadingProgressStack.Visibility = Visibility.Collapsed;
+                await SelectRootDirectoryAsync();
             }
         }
         catch (Exception ex)
@@ -213,8 +217,7 @@ public partial class MainWindow : Window
 
         private void ShuffleImages()
         {
-            // Not implemented in new architecture - would need to add to ImageManager
-            // For now, images remain in original order
+            imageManager.Shuffle();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -304,7 +307,7 @@ public partial class MainWindow : Window
                     break;
 
                 case Key.I:
-                    _ = ImportImagesAsync();
+                    _ = SelectRootDirectoryAsync();
                     break;
             }
         }
@@ -366,6 +369,64 @@ public partial class MainWindow : Window
             }
 
             LoadingOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private async System.Threading.Tasks.Task SelectRootDirectoryAsync()
+        {
+            try
+            {
+                Log.Information("Opening folder selection dialog");
+                
+                var dialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = "Select root directory to search for '_' folders",
+                    ShowNewFolderButton = false,
+                    UseDescriptionForTitle = true
+                };
+
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    string selectedPath = dialog.SelectedPath;
+                    Log.Information($"User selected directory: {selectedPath}");
+                    
+                    LoadingOverlay.Visibility = Visibility.Visible;
+                    LoadingText.Text = "Searching for images in '_' folders...";
+                    LoadingProgressStack.Visibility = Visibility.Visible;
+
+                    await imageManager.LoadImagesFromDirectoryAsync(selectedPath);
+                    
+                    if (imageManager.Images.Count > 0)
+                    {
+                        ShuffleImages();
+                        ShowImage(0);
+                        slideshowController.Start();
+                        LoadingOverlay.Visibility = Visibility.Collapsed;
+                        Log.Information($"Loaded {imageManager.Images.Count} images from selected directory");
+                    }
+                    else
+                    {
+                        LoadingText.Text = "No images found in '_' folders. Press I to try another directory.";
+                        LoadingProgressStack.Visibility = Visibility.Collapsed;
+                        Log.Warning("No images found in selected directory");
+                    }
+                }
+                else
+                {
+                    Log.Information("User cancelled folder selection");
+                    if (imageManager.Images.Count == 0)
+                    {
+                        LoadingText.Text = "No directory selected. Press I to select a directory.";
+                        LoadingProgressStack.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error selecting directory");
+                MessageBox.Show($"Error selecting directory:\n{ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                LoadingOverlay.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void ToggleFullscreen()

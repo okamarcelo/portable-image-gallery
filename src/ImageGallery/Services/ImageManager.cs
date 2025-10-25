@@ -17,6 +17,7 @@ public class ImageManager
         private readonly List<BitmapImage> images = new List<BitmapImage>();
         private readonly List<string> imageFileNames = new List<string>();
         private readonly string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".heic", ".heif", ".webp" };
+        private readonly Random random = new Random();
 
         public IReadOnlyList<BitmapImage> Images => images.AsReadOnly();
         public IReadOnlyList<string> ImageFileNames => imageFileNames.AsReadOnly();
@@ -26,30 +27,97 @@ public class ImageManager
         public event Action<string>? LogMessage;
 
         /// <summary>
-        /// Load all images from the application directory.
+        /// Shuffle the loaded images randomly.
+        /// </summary>
+        public void Shuffle()
+        {
+            if (images.Count <= 1) return;
+
+            // Fisher-Yates shuffle algorithm
+            for (int i = images.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(i + 1);
+                
+                // Swap images
+                (images[i], images[j]) = (images[j], images[i]);
+                
+                // Swap filenames
+                (imageFileNames[i], imageFileNames[j]) = (imageFileNames[j], imageFileNames[i]);
+            }
+
+            LogMessage?.Invoke($"Shuffled {images.Count} images");
+        }
+
+        /// <summary>
+        /// Load all images from "_" folders found recursively in the application directory.
         /// </summary>
         public async Task LoadImagesAsync()
+        {
+            string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            await LoadImagesFromDirectoryAsync(appDirectory);
+        }
+
+        /// <summary>
+        /// Load all images from "_" folders found recursively in the specified directory.
+        /// </summary>
+        public async Task LoadImagesFromDirectoryAsync(string rootDirectory)
         {
             await Task.Run(() =>
             {
                 try
                 {
-                    string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    var imageFiles = Directory.GetFiles(appDirectory)
-                        .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
-                        .ToList();
+                    // Clear existing images
+                    images.Clear();
+                    imageFileNames.Clear();
 
-                    if (imageFiles.Count == 0)
+                    LogMessage?.Invoke($"Searching for '_' folders in {rootDirectory}...");
+
+                    var underscoreFolders = new List<string>();
+                    int accessDeniedCount = 0;
+                    FindUnderscoreFoldersRecursive(rootDirectory, underscoreFolders, ref accessDeniedCount);
+
+                    if (accessDeniedCount > 0)
                     {
-                        LogMessage?.Invoke("No images found in directory");
+                        LogMessage?.Invoke($"Access denied to {accessDeniedCount} folder(s)");
+                    }
+
+                    if (underscoreFolders.Count == 0)
+                    {
+                        LogMessage?.Invoke("No '_' folders found");
                         return;
                     }
 
-                    LogMessage?.Invoke($"Found {imageFiles.Count} image files");
-                    LoadProgressChanged?.Invoke(0, imageFiles.Count);
+                    LogMessage?.Invoke($"Found {underscoreFolders.Count} '_' folder(s)");
+
+                    // Collect all image files from "_" folders
+                    var allImageFiles = new List<string>();
+                    foreach (var folder in underscoreFolders)
+                    {
+                        try
+                        {
+                            var files = Directory.GetFiles(folder)
+                                .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                                .ToList();
+                            allImageFiles.AddRange(files);
+                            LogMessage?.Invoke($"Found {files.Count} image(s) in {folder}");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogMessage?.Invoke($"Error reading folder {folder}: {ex.Message}");
+                        }
+                    }
+
+                    if (allImageFiles.Count == 0)
+                    {
+                        LogMessage?.Invoke("No images found in '_' folders");
+                        return;
+                    }
+
+                    LogMessage?.Invoke($"Loading {allImageFiles.Count} image files...");
+                    LoadProgressChanged?.Invoke(0, allImageFiles.Count);
 
                     int loadedCount = 0;
-                    foreach (var file in imageFiles)
+                    foreach (var file in allImageFiles)
                     {
                         try
                         {
@@ -63,17 +131,17 @@ public class ImageManager
                             images.Add(bitmap);
                             imageFileNames.Add(Path.GetFileName(file));
                             loadedCount++;
-                            LoadProgressChanged?.Invoke(loadedCount, imageFiles.Count);
+                            LoadProgressChanged?.Invoke(loadedCount, allImageFiles.Count);
                         }
                         catch (Exception ex)
                         {
                             LogMessage?.Invoke($"Error loading {Path.GetFileName(file)}: {ex.Message}");
                             loadedCount++;
-                            LoadProgressChanged?.Invoke(loadedCount, imageFiles.Count);
+                            LoadProgressChanged?.Invoke(loadedCount, allImageFiles.Count);
                         }
                     }
 
-                    LogMessage?.Invoke($"Successfully loaded {images.Count} images");
+                    LogMessage?.Invoke($"Successfully loaded {images.Count} images from '_' folders");
                 }
                 catch (Exception ex)
                 {
