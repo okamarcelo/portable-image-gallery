@@ -1,13 +1,13 @@
 using System;
 using System.Windows.Threading;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages slideshow timer and auto-advance functionality.
-    /// Single Responsibility: Handle slideshow timing and progression.
-    /// </summary>
-    public class SlideshowController
+namespace ImageGallery.Services;
+
+/// <summary>
+/// Manages slideshow timer and auto-advance functionality.
+/// Single Responsibility: Handle slideshow timing and progression.
+/// </summary>
+public class SlideshowController
     {
         private readonly DispatcherTimer timer;
         private double intervalSeconds = 5.0;
@@ -74,9 +74,8 @@ namespace ImageGallery.Services
             timer.Interval = TimeSpan.FromSeconds(intervalSeconds);
         }
 
-        private void Timer_Tick(object? sender, EventArgs e)
-        {
-            Tick?.Invoke();
-        }
+    private void Timer_Tick(object? sender, EventArgs e)
+    {
+        Tick?.Invoke();
     }
 }

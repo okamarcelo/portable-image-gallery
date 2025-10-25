@@ -4,13 +4,13 @@ using System.Windows;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages pause/play state and visual indicators.
-    /// Single Responsibility: Handle pause state and icon animations.
-    /// </summary>
-    public class PauseController
+namespace ImageGallery.Services;
+
+/// <summary>
+/// Manages pause/play state and visual indicators.
+/// Single Responsibility: Handle pause state and icon animations.
+/// </summary>
+public class PauseController
     {
         private bool isPaused = false;
         private readonly DispatcherTimer blinkTimer;
@@ -117,14 +117,13 @@ namespace ImageGallery.Services
             {
                 if (pauseBar1 != null)
                     pauseBar1.Opacity = pauseBar1.Opacity == 0.6 ? 0.3 : 0.6;
-                if (pauseBar2 != null)
-                    pauseBar2.Opacity = pauseBar2.Opacity == 0.6 ? 0.3 : 0.6;
-            }
-            else
-            {
-                if (playTriangle != null)
-                    playTriangle.Opacity = playTriangle.Opacity == 0.6 ? 0.3 : 0.6;
-            }
+            if (pauseBar2 != null)
+                pauseBar2.Opacity = pauseBar2.Opacity == 0.6 ? 0.3 : 0.6;
+        }
+        else
+        {
+            if (playTriangle != null)
+                playTriangle.Opacity = playTriangle.Opacity == 0.6 ? 0.3 : 0.6;
         }
     }
 }

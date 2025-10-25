@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages visual indicators for speed and zoom changes.
-    /// Single Responsibility: Handle indicator display and animations.
-    /// </summary>
-    public class IndicatorManager
+namespace ImageGallery.Services;
+
+/// <summary>
+/// Manages visual indicators for speed and zoom changes.
+/// Single Responsibility: Handle indicator display and animations.
+/// </summary>
+public class IndicatorManager
     {
         private Border? speedIndicator;
         private TextBlock? speedText;
@@ -62,12 +62,11 @@ namespace ImageGallery.Services
             {
                 await Task.Delay(150);
                 double opacity = zoomIndicator.Opacity == 0.4 ? 0.2 : 0.4;
-                zoomIndicator.Opacity = opacity;
-            }
-
-            await Task.Delay(500);
-            zoomIndicator.Visibility = Visibility.Collapsed;
-            zoomIndicator.Opacity = 0.4;
+            zoomIndicator.Opacity = opacity;
         }
+
+        await Task.Delay(500);
+        zoomIndicator.Visibility = Visibility.Collapsed;
+        zoomIndicator.Opacity = 0.4;
     }
 }

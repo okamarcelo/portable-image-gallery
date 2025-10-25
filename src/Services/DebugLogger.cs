@@ -4,13 +4,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages debug logging and console display.
-    /// Single Responsibility: Handle log collection and console UI.
-    /// </summary>
-    public class DebugLogger
+namespace ImageGallery.Services;
+
+/// <summary>
+/// Manages debug logging and console display.
+/// Single Responsibility: Handle log collection and console UI.
+/// </summary>
+public class DebugLogger
     {
         private readonly StringBuilder logBuilder = new StringBuilder();
         private Border? consoleContainer;
@@ -62,15 +62,14 @@ namespace ImageGallery.Services
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild)
-                    return typedChild;
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T typedChild)
+                return typedChild;
 
-                var result = FindVisualChild<T>(child);
-                if (result != null)
-                    return result;
-            }
-            return null;
+            var result = FindVisualChild<T>(child);
+            if (result != null)
+                return result;
         }
+        return null;
     }
 }

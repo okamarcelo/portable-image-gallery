@@ -6,13 +6,13 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages image loading, importing, and file operations.
-    /// Single Responsibility: Handle all image-related file operations.
-    /// </summary>
-    public class ImageManager
+namespace ImageGallery.Services;
+
+/// <summary>
+/// Manages image loading, importing, and file operations.
+/// Single Responsibility: Handle all image-related file operations.
+/// </summary>
+public class ImageManager
     {
         private readonly List<BitmapImage> images = new List<BitmapImage>();
         private readonly List<string> imageFileNames = new List<string>();
@@ -246,12 +246,11 @@ namespace ImageGallery.Services
             }
         }
 
-        private string GetFileHash(string filePath)
-        {
-            using var sha256 = SHA256.Create();
-            using var stream = File.OpenRead(filePath);
-            byte[] hash = sha256.ComputeHash(stream);
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-        }
+    private string GetFileHash(string filePath)
+    {
+        using var sha256 = SHA256.Create();
+        using var stream = File.OpenRead(filePath);
+        byte[] hash = sha256.ComputeHash(stream);
+        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
 }

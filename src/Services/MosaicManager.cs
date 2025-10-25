@@ -1,20 +1,19 @@
 using System;
 using System.Windows.Controls.Primitives;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages mosaic display configuration and layout.
-    /// Single Responsibility: Handle mosaic pane count and grid layout.
-    /// </summary>
-    public class MosaicManager
-    {
-        private int mosaicPaneCount = 1;
-        private readonly int[] mosaicSizes = { 1, 2, 4, 9, 16 };
-        private int currentMosaicPaneIndex = 0;
+namespace ImageGallery.Services;
 
-        public int PaneCount => mosaicPaneCount;
-        public bool IsMosaicMode => mosaicPaneCount > 1;
+/// <summary>
+/// Manages mosaic display configuration and layout.
+/// Single Responsibility: Handle mosaic pane count and grid layout.
+/// </summary>
+public class MosaicManager
+{
+    private int mosaicPaneCount = 1;
+    private readonly int[] mosaicSizes = { 1, 2, 4, 9, 16 };
+
+    public int PaneCount => mosaicPaneCount;
+    public bool IsMosaicMode => mosaicPaneCount > 1;
 
         public event Action<int>? PaneCountChanged; // new pane count
         public event Action<string>? LogMessage;
@@ -59,7 +58,6 @@ namespace ImageGallery.Services
 
         public void ResetPaneIndex()
         {
-            currentMosaicPaneIndex = 0;
+            // No-op for now - kept for future use
         }
     }
-}

@@ -3,13 +3,13 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace ImageGallery.Services
-{
-    /// <summary>
-    /// Manages zoom and pan functionality for image viewing.
-    /// Single Responsibility: Handle zoom level and image panning.
-    /// </summary>
-    public class ZoomController
+namespace ImageGallery.Services;
+
+/// <summary>
+/// Manages zoom and pan functionality for image viewing.
+/// Single Responsibility: Handle zoom level and image panning.
+/// </summary>
+public class ZoomController
     {
         private double zoomLevel = 1.0;
         private Point panOffset = new Point(0, 0);
@@ -132,10 +132,9 @@ namespace ImageGallery.Services
             }
         }
 
-        private void ResetPan()
-        {
-            panOffset = new Point(0, 0);
-            ApplyPan();
-        }
+    private void ResetPan()
+    {
+        panOffset = new Point(0, 0);
+        ApplyPan();
     }
 }
