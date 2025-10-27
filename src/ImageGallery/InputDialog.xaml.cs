@@ -15,8 +15,8 @@ public partial class InputDialog : Window
         // Ensure the textbox gets focus when the dialog opens
         Loaded += (s, e) =>
         {
-            InputTextBox.SelectAll();
             InputTextBox.Focus();
+            InputTextBox.CaretIndex = InputTextBox.Text.Length; // Move cursor to end
         };
     }
 
