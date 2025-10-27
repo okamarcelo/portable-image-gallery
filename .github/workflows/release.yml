@@ -23,19 +23,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-        
-    - name: Restore dependencies
-      run: dotnet restore src/portable-image-gallery.sln
-      
-    - name: Build
-      run: dotnet build src/portable-image-gallery.sln --configuration Release --no-restore
-      
-    - name: Run tests
-      run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal
-      
-    - name: Publish
-      run: dotnet publish src/ImageGallery/ImageGallery.csproj --configuration Release --output ./publish
-      
+    
     - name: Get current date
       id: date
       run: echo "date=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
@@ -50,6 +38,7 @@ jobs:
         if ([string]::IsNullOrEmpty($latestTag)) {
           # No previous releases, start with v1.0.0
           $newVersion = "v1.0.0"
+          $numericVersion = "1.0.0"
         } else {
           # Parse current version (format: vX.Y.Z)
           $latestTag -match 'v?(\d+)\.(\d+)\.(\d+)' | Out-Null
@@ -74,13 +63,27 @@ jobs:
           }
           
           $newVersion = "v$major.$minor.$patch"
+          $numericVersion = "$major.$minor.$patch"
         }
         
         echo "version=$newVersion" >> $env:GITHUB_OUTPUT
+        echo "numeric_version=$numericVersion" >> $env:GITHUB_OUTPUT
         echo "Generated version: $newVersion"
       shell: pwsh
       env:
         GH_TOKEN: ${{ github.token }}
+        
+    - name: Restore dependencies
+      run: dotnet restore src/portable-image-gallery.sln
+      
+    - name: Build
+      run: dotnet build src/portable-image-gallery.sln --configuration Release --no-restore /p:VersionPrefix=${{ steps.version.outputs.numeric_version }}
+      
+    - name: Run tests
+      run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal
+      
+    - name: Publish
+      run: dotnet publish src/ImageGallery/ImageGallery.csproj --configuration Release --output ./publish /p:VersionPrefix=${{ steps.version.outputs.numeric_version }}
       
     - name: Create Release Archive
       run: |
