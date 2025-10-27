@@ -230,6 +230,14 @@ public partial class MainWindow : Window
                 Log.Information($"Set pane count to {mosaicManager.PaneCount}");
             }
 
+            // Set fullscreen mode if specified
+            if (cliArgs.Fullscreen)
+            {
+                // Note: We need to set fullscreen after the window is fully loaded
+                // So we'll do it after loading images
+                Log.Information("CLI: Fullscreen mode will be activated");
+            }
+
             // Load images from specified directory
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
@@ -247,6 +255,14 @@ public partial class MainWindow : Window
                 ShowImage(0);
                 slideshowController.Start();
                 LoadingOverlay.Visibility = Visibility.Collapsed;
+                
+                // Activate fullscreen mode if requested via CLI
+                if (cliArgs.Fullscreen)
+                {
+                    ToggleFullscreen();
+                    Log.Information("CLI: Activated fullscreen mode");
+                }
+                
                 Log.Information($"CLI mode: Loaded {imageManager.Images.Count} images, started slideshow");
             }
             else

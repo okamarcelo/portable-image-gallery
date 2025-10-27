@@ -114,6 +114,13 @@ public partial class App : Application
                         }
                         break;
                         
+                    case "-f":
+                    case "--fullscreen":
+                        hasPatternOrMosaic = true;
+                        cliArgs.Fullscreen = true;
+                        Log.Information("CLI: Fullscreen mode enabled");
+                        break;
+                        
                     default:
                         Log.Warning($"CLI: Unknown argument '{arg}'");
                         break;

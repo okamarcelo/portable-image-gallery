@@ -5,7 +5,7 @@ ImageGallery can be launched from the command line with optional parameters to a
 
 ## Syntax
 ```
-ImageGallery.exe [-d|--dir <directory>] [-p|--pattern <pattern>] [-m|--mosaic <count>]
+ImageGallery.exe [-d|--dir <directory>] [-p|--pattern <pattern>] [-m|--mosaic <count>] [-f|--fullscreen]
 ```
 
 ## Parameters
@@ -46,6 +46,18 @@ The number of mosaic panes to display simultaneously.
 - `-m 4` - 2x2 grid
 - `-m 9` - 3x3 grid
 - `-m 16` - 4x4 grid
+
+### -f, --fullscreen (Optional)
+Start the application in fullscreen mode.
+
+- **Default (if not provided)**: Starts in windowed mode
+- **No value required**: This is a flag parameter
+
+**Examples:**
+- `-f`
+- `--fullscreen`
+
+**Note:** You can press `F` key at any time to toggle fullscreen mode.
 
 ## Usage Examples
 
@@ -123,6 +135,20 @@ cd C:\MyPhotos
 ImageGallery.exe -p "vacation" -m 4
 ```
 This will search for folders named "vacation" in `C:\MyPhotos` and display with a 2x2 grid.
+
+### Example 11: Fullscreen mode
+```
+ImageGallery.exe -d "C:\Photos" -f
+ImageGallery.exe --dir "D:\Images" --fullscreen
+ImageGallery.exe -p "photos" -m 9 -f
+```
+Start in fullscreen mode. Can be combined with any other parameters.
+
+### Example 12: Complete example with all parameters
+```
+ImageGallery.exe -d "C:\Vacation2024" -p "images" -m 4 -f
+```
+Searches for "images" folders in `C:\Vacation2024`, displays in 2x2 grid, and starts in fullscreen mode.
 
 ## Notes
 

@@ -21,6 +21,11 @@ public class CommandLineArguments
     public int? PaneCount { get; set; }
 
     /// <summary>
+    /// Start in fullscreen mode. Default is false.
+    /// </summary>
+    public bool Fullscreen { get; set; }
+
+    /// <summary>
     /// Returns true if CLI mode is active (root directory was specified).
     /// </summary>
     public bool IsCliMode => !string.IsNullOrWhiteSpace(RootDirectory);
