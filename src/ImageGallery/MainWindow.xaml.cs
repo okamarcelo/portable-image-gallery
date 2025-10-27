@@ -29,13 +29,21 @@ public partial class MainWindow : Window
         private bool isFullscreen = false;
         private WindowState previousWindowState;
         private WindowStyle previousWindowStyle;
+        private CommandLineArguments? cliArgs;
 
-    public MainWindow()
+    public MainWindow() : this(new CommandLineArguments())
+    {
+    }
+
+    public MainWindow(CommandLineArguments commandLineArgs)
     {
         try
         {
             Log.Information("MainWindow initializing");
             InitializeComponent();
+
+            // Store CLI arguments
+            cliArgs = commandLineArgs;
 
             // Initialize services
             Log.Debug("Creating service instances");
@@ -134,7 +142,14 @@ public partial class MainWindow : Window
             debugLogger.Log("Application started");
             Log.Debug("UI components initialized");
 
-            // Load images
+            // Handle CLI arguments if provided
+            if (cliArgs != null && cliArgs.IsCliMode)
+            {
+                await LoadFromCliArgumentsAsync();
+                return;
+            }
+
+            // Normal startup - load images from default location
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
 
@@ -168,6 +183,87 @@ public partial class MainWindow : Window
         {
             Log.Error(ex, "Error during window load");
             MessageBox.Show($"Error loading application:\n{ex.Message}", "Load Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async System.Threading.Tasks.Task LoadFromCliArgumentsAsync()
+    {
+        try
+        {
+            if (cliArgs == null || !cliArgs.IsCliMode)
+                return;
+
+            Log.Information("Loading from CLI arguments");
+
+            // Set folder pattern (empty string means all subdirectories)
+            imageManager.FolderPattern = cliArgs.FolderPattern ?? "";
+            
+            // Set pane count if specified
+            if (cliArgs.PaneCount.HasValue)
+            {
+                // Find the closest valid mosaic size
+                int targetPanes = cliArgs.PaneCount.Value;
+                int[] validSizes = { 1, 2, 4, 9, 16 };
+                
+                // Find the exact match or closest valid size
+                int closestSize = validSizes[0];
+                foreach (int size in validSizes)
+                {
+                    if (size == targetPanes)
+                    {
+                        closestSize = size;
+                        break;
+                    }
+                    else if (size < targetPanes)
+                    {
+                        closestSize = size;
+                    }
+                }
+
+                // Set the pane count by calling IncreasePanes/DecreasePanes
+                while (mosaicManager.PaneCount != closestSize)
+                {
+                    if (mosaicManager.PaneCount < closestSize)
+                        mosaicManager.IncreasePanes();
+                    else
+                        mosaicManager.DecreasePanes();
+                }
+
+                Log.Information($"Set pane count to {mosaicManager.PaneCount}");
+            }
+
+            // Load images from specified directory
+            LoadingOverlay.Visibility = Visibility.Visible;
+            LoadingProgressStack.Visibility = Visibility.Visible;
+            
+            string patternText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
+                ? "all subdirectories"
+                : $"'{imageManager.FolderPattern}' folders";
+            LoadingText.Text = $"Loading images from {patternText}...";
+
+            await imageManager.LoadImagesFromDirectoryAsync(cliArgs.RootDirectory!);
+            
+            if (imageManager.Images.Count > 0)
+            {
+                ShuffleImages();
+                ShowImage(0);
+                slideshowController.Start();
+                LoadingOverlay.Visibility = Visibility.Collapsed;
+                Log.Information($"CLI mode: Loaded {imageManager.Images.Count} images, started slideshow");
+            }
+            else
+            {
+                LoadingText.Text = $"No images found in {patternText}. Press I to select a directory.";
+                LoadingProgressStack.Visibility = Visibility.Collapsed;
+                Log.Warning("CLI mode: No images found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error loading from CLI arguments");
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+            MessageBox.Show($"Error loading images:\n{ex.Message}", "Load Error", 
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
