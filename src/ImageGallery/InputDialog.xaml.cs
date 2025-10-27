@@ -11,8 +11,13 @@ public partial class InputDialog : Window
         InitializeComponent();
         Title = title;
         InputTextBox.Text = defaultValue;
-        InputTextBox.SelectAll();
-        InputTextBox.Focus();
+        
+        // Ensure the textbox gets focus when the dialog opens
+        Loaded += (s, e) =>
+        {
+            InputTextBox.SelectAll();
+            InputTextBox.Focus();
+        };
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

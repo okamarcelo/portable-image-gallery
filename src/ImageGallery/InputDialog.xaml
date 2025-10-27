@@ -23,7 +23,7 @@
                    Margin="0,0,0,10"/>
         
         <TextBlock Grid.Row="1" 
-                   Text="(e.g., '_' or 'images' or 'photos')" 
+                   Text="(e.g., 'images' or 'photos'; leave empty for all subdirectories)" 
                    Foreground="#888888" 
                    FontSize="11"
                    Margin="0,0,0,10"/>
@@ -37,7 +37,10 @@
                  Foreground="White"
                  BorderBrush="#555555"
                  BorderThickness="1"
-                 Margin="0,0,0,15"/>
+                 Margin="0,0,0,15"
+                 IsEnabled="True"
+                 Focusable="True"
+                 CaretBrush="White"/>
 
         <StackPanel Grid.Row="3" 
                     Orientation="Horizontal" 

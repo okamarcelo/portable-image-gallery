@@ -18,14 +18,14 @@ public class ImageManager
         private readonly List<string> imageFileNames = new List<string>();
         private readonly string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".heic", ".heif", ".webp" };
         private readonly Random random = new Random();
-        private string folderPattern = "_"; // Default pattern
+        private string folderPattern = "images"; // Default pattern
 
         public IReadOnlyList<BitmapImage> Images => images.AsReadOnly();
         public IReadOnlyList<string> ImageFileNames => imageFileNames.AsReadOnly();
         public string FolderPattern 
         { 
             get => folderPattern; 
-            set => folderPattern = string.IsNullOrWhiteSpace(value) ? "_" : value; 
+            set => folderPattern = string.IsNullOrWhiteSpace(value) ? "" : value; 
         }
         
         public event Action<int, int>? LoadProgressChanged; // current, total
@@ -76,7 +76,10 @@ public class ImageManager
                     images.Clear();
                     imageFileNames.Clear();
 
-                    LogMessage?.Invoke($"Searching for '{folderPattern}' folders in {rootDirectory}...");
+                    string searchMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        ? $"Searching for images in all subdirectories of {rootDirectory}..."
+                        : $"Searching for '{folderPattern}' folders in {rootDirectory}...";
+                    LogMessage?.Invoke(searchMessage);
 
                     var matchingFolders = new List<string>();
                     int accessDeniedCount = 0;
@@ -89,11 +92,17 @@ public class ImageManager
 
                     if (matchingFolders.Count == 0)
                     {
-                        LogMessage?.Invoke($"No '{folderPattern}' folders found");
+                        string notFoundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                            ? "No subdirectories found"
+                            : $"No '{folderPattern}' folders found";
+                        LogMessage?.Invoke(notFoundMessage);
                         return;
                     }
 
-                    LogMessage?.Invoke($"Found {matchingFolders.Count} '{folderPattern}' folder(s)");
+                    string foundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        ? $"Searching in {matchingFolders.Count} subdirectories"
+                        : $"Found {matchingFolders.Count} '{folderPattern}' folder(s)";
+                    LogMessage?.Invoke(foundMessage);
 
                     // Collect all image files from matching folders
                     var allImageFiles = new List<string>();
@@ -115,7 +124,10 @@ public class ImageManager
 
                     if (allImageFiles.Count == 0)
                     {
-                        LogMessage?.Invoke($"No images found in '{folderPattern}' folders");
+                        string noImagesMessage = string.IsNullOrWhiteSpace(folderPattern)
+                            ? "No images found in subdirectories"
+                            : $"No images found in '{folderPattern}' folders";
+                        LogMessage?.Invoke(noImagesMessage);
                         return;
                     }
 
@@ -147,7 +159,10 @@ public class ImageManager
                         }
                     }
 
-                    LogMessage?.Invoke($"Successfully loaded {images.Count} images from '{folderPattern}' folders");
+                    string successMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        ? $"Successfully loaded {images.Count} images from subdirectories"
+                        : $"Successfully loaded {images.Count} images from '{folderPattern}' folders";
+                    LogMessage?.Invoke(successMessage);
                 }
                 catch (Exception ex)
                 {
@@ -168,7 +183,10 @@ public class ImageManager
                 try
                 {
                     string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    LogMessage?.Invoke($"Searching for '{folderPattern}' folders...");
+                    string searchMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        ? "Searching for images in all subdirectories..."
+                        : $"Searching for '{folderPattern}' folders...";
+                    LogMessage?.Invoke(searchMessage);
 
                     var matchingFolders = new List<string>();
                     int accessDeniedCount = 0;
@@ -181,11 +199,17 @@ public class ImageManager
 
                     if (matchingFolders.Count == 0)
                     {
-                        LogMessage?.Invoke($"No '{folderPattern}' folders found");
+                        string notFoundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                            ? "No subdirectories found"
+                            : $"No '{folderPattern}' folders found";
+                        LogMessage?.Invoke(notFoundMessage);
                         return;
                     }
 
-                    LogMessage?.Invoke($"Found {matchingFolders.Count} '{folderPattern}' folders");
+                    string foundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        ? $"Found {matchingFolders.Count} subdirectories"
+                        : $"Found {matchingFolders.Count} '{folderPattern}' folders";
+                    LogMessage?.Invoke(foundMessage);
 
                     // Collect all image files
                     var allFiles = new List<string>();
@@ -206,7 +230,10 @@ public class ImageManager
 
                     if (allFiles.Count == 0)
                     {
-                        LogMessage?.Invoke($"No images found in '{folderPattern}' folders");
+                        string noImagesMessage = string.IsNullOrWhiteSpace(folderPattern)
+                            ? "No images found in subdirectories"
+                            : $"No images found in '{folderPattern}' folders";
+                        LogMessage?.Invoke(noImagesMessage);
                         return;
                     }
 
@@ -303,10 +330,16 @@ public class ImageManager
             {
                 foreach (var subDir in Directory.GetDirectories(directory))
                 {
-                    if (Path.GetFileName(subDir) == folderPattern)
+                    // If pattern is empty, add all subdirectories; otherwise match the pattern
+                    if (string.IsNullOrWhiteSpace(folderPattern))
                     {
                         results.Add(subDir);
                     }
+                    else if (Path.GetFileName(subDir) == folderPattern)
+                    {
+                        results.Add(subDir);
+                    }
+                    
                     FindMatchingFoldersRecursive(subDir, results, ref accessDeniedCount);
                 }
             }
