@@ -17,35 +17,13 @@ public class DebugLogger : IDisposable
     private readonly StringBuilder logBuilder = new StringBuilder();
     private Border? consoleContainer;
     private TextBox? logTextBox;
-    private StreamWriter? logFileWriter;
-    private readonly string logFilePath;
     private const int MaxLogLength = 100000; // Limit log to 100KB to prevent crashes
 
     public bool IsVisible { get; private set; } = false;
 
     public DebugLogger()
     {
-        // Write log directly to current directory
-        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        logFilePath = $"imagegallery_{timestamp}.log";
-        
-        try
-        {
-            logFileWriter = new StreamWriter(logFilePath, append: true) { AutoFlush = true };
-            LogToFile($"=== Log started at {DateTime.Now} ===");
-            LogToFile($"Log file: {Path.GetFullPath(logFilePath)}");
-        }
-        catch (Exception ex)
-        {
-            // Try to log the error somewhere
-            try
-            {
-                File.WriteAllText("error.txt", $"Failed to create log: {ex.Message}");
-            }
-            catch
-            {
-            }
-        }
+        // No file logging - Serilog will handle that
     }
 
     public void Initialize(Border console, TextBox textBox)
@@ -59,9 +37,6 @@ public class DebugLogger : IDisposable
         try
         {
             var timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
-            
-            // Write to file first (most important)
-            LogToFile(timestampedMessage);
             
             // Add to in-memory log with size limit
             logBuilder.AppendLine(timestampedMessage);
@@ -121,18 +96,6 @@ public class DebugLogger : IDisposable
         }
     }
 
-    private void LogToFile(string message)
-    {
-        try
-        {
-            logFileWriter?.WriteLine(message);
-        }
-        catch
-        {
-            // Ignore file logging errors
-        }
-    }
-
     public void Toggle()
     {
         IsVisible = !IsVisible;
@@ -171,15 +134,6 @@ public class DebugLogger : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            LogToFile($"=== Log ended at {DateTime.Now} ===");
-            logFileWriter?.Flush();
-            logFileWriter?.Dispose();
-        }
-        catch
-        {
-            // Ignore
-        }
+        // No resources to dispose now that file logging is handled by Serilog
     }
 }

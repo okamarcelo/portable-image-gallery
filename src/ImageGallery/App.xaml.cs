@@ -40,12 +40,16 @@ public partial class App : Application
             verboseLogging = configuration.GetValue<bool>("AppSettings:Logging:VerboseLogging", false);
         }
 
-        // Configure Serilog
+        // Create DebugLogger instance (will be shared)
+        var debugLogger = new DebugLogger();
+
+        // Configure Serilog with DebugLogger sink
         if (loggingEnabled && hasAppSettings && configuration != null)
         {
-            // Use configuration from appsettings.json
+            // Use configuration from appsettings.json + add DebugLogger sink
             var loggerConfig = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration);
+                .ReadFrom.Configuration(configuration)
+                .WriteTo.DebugLogger(debugLogger);
             
             // Set minimum level based on verbose logging setting
             if (verboseLogging)
@@ -58,9 +62,10 @@ public partial class App : Application
         }
         else if (loggingEnabled && !hasAppSettings)
         {
-            // No appsettings.json - create a simple console/debug logger without file output
+            // No appsettings.json - log to DebugLogger only
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
+                .WriteTo.DebugLogger(debugLogger)
                 .CreateLogger();
             Log.Information(Strings.SLog_ApplicationStarting);
         }
@@ -73,7 +78,7 @@ public partial class App : Application
 
         // Setup dependency injection
         var services = new ServiceCollection();
-        ConfigureServices(services);
+        ConfigureServices(services, debugLogger);
         ServiceProvider = services.BuildServiceProvider();
 
         // Log unhandled exceptions
@@ -117,7 +122,7 @@ public partial class App : Application
         mainWindow.Show();
     }
 
-    private void ConfigureServices(IServiceCollection services)
+    private void ConfigureServices(IServiceCollection services, DebugLogger debugLogger)
     {
         // Add logging
         services.AddLogging(builder =>
@@ -125,6 +130,9 @@ public partial class App : Application
             builder.ClearProviders();
             builder.AddSerilog(dispose: true);
         });
+
+        // Add the shared DebugLogger instance
+        services.AddSingleton(debugLogger);
 
         // Add services
         services.AddSingleton<ImageCache>(sp => 
@@ -137,7 +145,6 @@ public partial class App : Application
         services.AddSingleton<MosaicManager>();
         services.AddSingleton<SlideshowController>();
         services.AddSingleton<PauseController>();
-        services.AddSingleton<DebugLogger>();
         services.AddSingleton<IndicatorManager>();
         
         // Add MainWindow as transient (created per request)
