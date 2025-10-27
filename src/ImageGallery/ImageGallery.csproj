@@ -20,7 +20,7 @@
     <InformationalVersion>$(VersionPrefix)</InformationalVersion>
     <Product>Portable Image Gallery</Product>
     <Company>okamarcelo</Company>
-    <Copyright>Copyright © 2025</Copyright>
+    <Copyright>Copyright (c) 2025</Copyright>
     <Description>A lightweight, portable image gallery application with slideshow capabilities</Description>
   </PropertyGroup>
 
