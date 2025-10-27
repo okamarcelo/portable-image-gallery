@@ -41,14 +41,46 @@ jobs:
       run: echo "date=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
       shell: pwsh
       
-    - name: Generate version number
+    - name: Generate semantic version
       id: version
       run: |
-        $prNumber = "${{ github.event.pull_request.number }}"
-        $date = "${{ steps.date.outputs.date }}"
-        $version = "v$date-pr$prNumber"
-        echo "version=$version" >> $env:GITHUB_OUTPUT
+        # Get the latest release tag
+        $latestTag = gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>$null
+        
+        if ([string]::IsNullOrEmpty($latestTag)) {
+          # No previous releases, start with v1.0.0
+          $newVersion = "v1.0.0"
+        } else {
+          # Parse current version (format: vX.Y.Z)
+          $latestTag -match 'v?(\d+)\.(\d+)\.(\d+)' | Out-Null
+          $major = [int]$matches[1]
+          $minor = [int]$matches[2]
+          $patch = [int]$matches[3]
+          
+          # Get PR labels
+          $labels = '${{ toJson(github.event.pull_request.labels.*.name) }}' | ConvertFrom-Json
+          
+          # Determine version bump based on labels
+          if ($labels -contains 'major' -or $labels -contains 'breaking') {
+            $major++
+            $minor = 0
+            $patch = 0
+          } elseif ($labels -contains 'minor' -or $labels -contains 'feature') {
+            $minor++
+            $patch = 0
+          } else {
+            # Default to patch for fixes, chores, refactors, etc.
+            $patch++
+          }
+          
+          $newVersion = "v$major.$minor.$patch"
+        }
+        
+        echo "version=$newVersion" >> $env:GITHUB_OUTPUT
+        echo "Generated version: $newVersion"
       shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
       
     - name: Create Release Archive
       run: |
