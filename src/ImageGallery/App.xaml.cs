@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using ImageGallery.Services;
 using Serilog;
@@ -35,14 +36,33 @@ public partial class App : Application
         // Log unhandled exceptions
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
         {
-            Log.Fatal(args.ExceptionObject as Exception, Strings.SLog_UnhandledException);
+            var exception = args.ExceptionObject as Exception;
+            Log.Fatal(exception, Strings.SLog_UnhandledException);
+            
+            // Show error dialog
+            ShowFatalErrorDialog(exception, "Unhandled Application Exception");
+            
             Log.CloseAndFlush();
         };
 
         DispatcherUnhandledException += (sender, args) =>
         {
             Log.Fatal(args.Exception, Strings.SLog_UnhandledDispatcherException);
-            args.Handled = false; // Let it crash so user can see the error
+            
+            // Show error dialog
+            ShowFatalErrorDialog(args.Exception, "Unhandled UI Exception");
+            
+            args.Handled = true; // Prevent crash, allow graceful shutdown
+        };
+
+        TaskScheduler.UnobservedTaskException += (sender, args) =>
+        {
+            Log.Fatal(args.Exception, "Unhandled Task Exception");
+            
+            // Show error dialog
+            ShowFatalErrorDialog(args.Exception, "Unhandled Background Task Exception");
+            
+            args.SetObserved(); // Prevent crash
         };
 
         // Parse command-line arguments
@@ -176,6 +196,68 @@ public partial class App : Application
         
         MessageBox.Show(sb.ToString(), "ImageGallery Help", MessageBoxButton.OK, MessageBoxImage.Information);
         Environment.Exit(0);
+    }
+
+    private void ShowFatalErrorDialog(Exception? exception, string title)
+    {
+        try
+        {
+            var errorMessage = new System.Text.StringBuilder();
+            errorMessage.AppendLine("A fatal error occurred and the application must close.");
+            errorMessage.AppendLine();
+            errorMessage.AppendLine($"Error: {exception?.Message ?? "Unknown error"}");
+            errorMessage.AppendLine();
+            errorMessage.AppendLine("Technical Details:");
+            errorMessage.AppendLine(exception?.GetType().FullName ?? "Unknown");
+            
+            if (exception?.StackTrace != null)
+            {
+                errorMessage.AppendLine();
+                errorMessage.AppendLine("Stack Trace:");
+                // Limit stack trace to first 500 characters to avoid huge dialogs
+                var stackTrace = exception.StackTrace;
+                errorMessage.AppendLine(stackTrace.Length > 500 
+                    ? stackTrace.Substring(0, 500) + "..." 
+                    : stackTrace);
+            }
+
+            if (exception?.InnerException != null)
+            {
+                errorMessage.AppendLine();
+                errorMessage.AppendLine($"Inner Exception: {exception.InnerException.Message}");
+            }
+
+            errorMessage.AppendLine();
+            errorMessage.AppendLine("A detailed error log has been saved.");
+            
+            // Also write to a crash log file
+            try
+            {
+                var crashLogPath = $"crash_{DateTime.Now:yyyyMMdd_HHmmss}.log";
+                System.IO.File.WriteAllText(crashLogPath, 
+                    $"=== Fatal Error at {DateTime.Now} ===\n\n{exception}");
+                errorMessage.AppendLine($"Crash log: {System.IO.Path.GetFullPath(crashLogPath)}");
+            }
+            catch
+            {
+                // Ignore crash log errors
+            }
+
+            MessageBox.Show(
+                errorMessage.ToString(), 
+                $"Fatal Error: {title}", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Error);
+        }
+        catch
+        {
+            // Last resort - show simple error
+            MessageBox.Show(
+                $"A fatal error occurred:\n{exception?.Message ?? "Unknown error"}", 
+                "Fatal Error", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Error);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

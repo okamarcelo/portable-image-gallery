@@ -18,7 +18,7 @@ namespace ImageGallery.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Strings {
+    public class Strings {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -32,7 +32,7 @@ namespace ImageGallery.Resources {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ImageGallery.Resources.Strings", typeof(Strings).Assembly);
@@ -47,7 +47,7 @@ namespace ImageGallery.Resources {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -55,493 +55,590 @@ namespace ImageGallery.Resources {
                 resourceCulture = value;
             }
         }
-        
-        internal static string MainWindow_Title {
+
+        public static string MainWindow_Title {
             get {
                 return ResourceManager.GetString("MainWindow_Title", resourceCulture);
             }
-        }        
-        internal static string InputDialog_Title {
+        }
+
+        public static string InputDialog_Title {
             get {
                 return ResourceManager.GetString("InputDialog_Title", resourceCulture);
             }
-        }        
-        internal static string Loading_Images {
+        }
+
+        public static string Loading_Images {
             get {
                 return ResourceManager.GetString("Loading_Images", resourceCulture);
             }
-        }        
-        internal static string Loading_ImagesFrom {
+        }
+
+        public static string Loading_ImagesFrom {
             get {
                 return ResourceManager.GetString("Loading_ImagesFrom", resourceCulture);
             }
-        }        
-        internal static string Importing_Files {
+        }
+
+        public static string Importing_Files {
             get {
                 return ResourceManager.GetString("Importing_Files", resourceCulture);
             }
-        }        
-        internal static string Progress_CurrentTotal {
+        }
+
+        public static string Progress_CurrentTotal {
             get {
                 return ResourceManager.GetString("Progress_CurrentTotal", resourceCulture);
             }
-        }        
-        internal static string Progress_CurrentTotalErrors {
+        }
+
+        public static string Progress_CurrentTotalErrors {
             get {
                 return ResourceManager.GetString("Progress_CurrentTotalErrors", resourceCulture);
             }
-        }        
-        internal static string Error_NoImages {
+        }
+
+        public static string Error_NoImages {
             get {
                 return ResourceManager.GetString("Error_NoImages", resourceCulture);
             }
-        }        
-        internal static string Error_NoImagesInPattern {
+        }
+
+        public static string Error_NoImagesInPattern {
             get {
                 return ResourceManager.GetString("Error_NoImagesInPattern", resourceCulture);
             }
-        }        
-        internal static string Error_InitializationTitle {
+        }
+
+        public static string Error_InitializationTitle {
             get {
                 return ResourceManager.GetString("Error_InitializationTitle", resourceCulture);
             }
-        }        
-        internal static string Error_InitializationMessage {
+        }
+
+        public static string Error_InitializationMessage {
             get {
                 return ResourceManager.GetString("Error_InitializationMessage", resourceCulture);
             }
-        }        
-        internal static string Error_LoadTitle {
+        }
+
+        public static string Error_LoadTitle {
             get {
                 return ResourceManager.GetString("Error_LoadTitle", resourceCulture);
             }
-        }        
-        internal static string Error_LoadMessage {
+        }
+
+        public static string Error_LoadMessage {
             get {
                 return ResourceManager.GetString("Error_LoadMessage", resourceCulture);
             }
-        }        
-        internal static string Error_LoadImagesMessage {
+        }
+
+        public static string Error_LoadImagesMessage {
             get {
                 return ResourceManager.GetString("Error_LoadImagesMessage", resourceCulture);
             }
-        }        
-        internal static string Pattern_AllSubdirectories {
+        }
+
+        public static string Pattern_AllSubdirectories {
             get {
                 return ResourceManager.GetString("Pattern_AllSubdirectories", resourceCulture);
             }
-        }        
-        internal static string Pattern_SpecificFolders {
+        }
+
+        public static string Pattern_SpecificFolders {
             get {
                 return ResourceManager.GetString("Pattern_SpecificFolders", resourceCulture);
             }
-        }        
-        internal static string InputDialog_Prompt {
+        }
+
+        public static string InputDialog_Prompt {
             get {
                 return ResourceManager.GetString("InputDialog_Prompt", resourceCulture);
             }
-        }        
-        internal static string InputDialog_Help {
+        }
+
+        public static string InputDialog_Help {
             get {
                 return ResourceManager.GetString("InputDialog_Help", resourceCulture);
             }
-        }        
-        internal static string Button_OK {
+        }
+
+        public static string Button_OK {
             get {
                 return ResourceManager.GetString("Button_OK", resourceCulture);
             }
-        }        
-        internal static string Button_Cancel {
+        }
+
+        public static string Button_Cancel {
             get {
                 return ResourceManager.GetString("Button_Cancel", resourceCulture);
             }
-        }        
-        internal static string Status_Paused {
+        }
+
+        public static string Status_Paused {
             get {
                 return ResourceManager.GetString("Status_Paused", resourceCulture);
             }
-        }        
-        internal static string Status_Resumed {
+        }
+
+        public static string Status_Resumed {
             get {
                 return ResourceManager.GetString("Status_Resumed", resourceCulture);
             }
-        }        
-        internal static string Status_SlideshowStarted {
+        }
+
+        public static string Status_SlideshowStarted {
             get {
                 return ResourceManager.GetString("Status_SlideshowStarted", resourceCulture);
             }
-        }        
-        internal static string Status_SlideshowStopped {
+        }
+
+        public static string Status_SlideshowStopped {
             get {
                 return ResourceManager.GetString("Status_SlideshowStopped", resourceCulture);
             }
-        }        
-        internal static string Status_ApplicationStarted {
+        }
+
+        public static string Status_ApplicationStarted {
             get {
                 return ResourceManager.GetString("Status_ApplicationStarted", resourceCulture);
             }
-        }        
-        internal static string Status_DebugConsoleShown {
+        }
+
+        public static string Status_DebugConsoleShown {
             get {
                 return ResourceManager.GetString("Status_DebugConsoleShown", resourceCulture);
             }
-        }        
-        internal static string Status_DebugConsoleHidden {
+        }
+
+        public static string Status_DebugConsoleHidden {
             get {
                 return ResourceManager.GetString("Status_DebugConsoleHidden", resourceCulture);
             }
-        }        
-        internal static string Log_Zoom {
+        }
+
+        public static string Log_Zoom {
             get {
                 return ResourceManager.GetString("Log_Zoom", resourceCulture);
             }
-        }        
-        internal static string Log_SlideshowSpeed {
+        }
+
+        public static string Log_SlideshowSpeed {
             get {
                 return ResourceManager.GetString("Log_SlideshowSpeed", resourceCulture);
             }
-        }        
-        internal static string Log_MosaicMode {
+        }
+
+        public static string Log_MosaicMode {
             get {
                 return ResourceManager.GetString("Log_MosaicMode", resourceCulture);
             }
-        }        
-        internal static string Log_Timestamp {
+        }
+
+        public static string Log_Timestamp {
             get {
                 return ResourceManager.GetString("Log_Timestamp", resourceCulture);
             }
-        }        
-        internal static string SLog_MainWindowInitializing {
+        }
+
+        public static string SLog_MainWindowInitializing {
             get {
                 return ResourceManager.GetString("SLog_MainWindowInitializing", resourceCulture);
             }
-        }        
-        internal static string SLog_CreatingServiceInstances {
+        }
+
+        public static string SLog_CreatingServiceInstances {
             get {
                 return ResourceManager.GetString("SLog_CreatingServiceInstances", resourceCulture);
             }
-        }        
-        internal static string SLog_SettingUpEventHandlers {
+        }
+
+        public static string SLog_SettingUpEventHandlers {
             get {
                 return ResourceManager.GetString("SLog_SettingUpEventHandlers", resourceCulture);
             }
-        }        
-        internal static string SLog_MainWindowInitializedSuccessfully {
+        }
+
+        public static string SLog_MainWindowInitializedSuccessfully {
             get {
                 return ResourceManager.GetString("SLog_MainWindowInitializedSuccessfully", resourceCulture);
             }
-        }        
-        internal static string SLog_FailedToInitializeMainWindow {
+        }
+
+        public static string SLog_FailedToInitializeMainWindow {
             get {
                 return ResourceManager.GetString("SLog_FailedToInitializeMainWindow", resourceCulture);
             }
-        }        
-        internal static string SLog_WindowLoaded {
+        }
+
+        public static string SLog_WindowLoaded {
             get {
                 return ResourceManager.GetString("SLog_WindowLoaded", resourceCulture);
             }
-        }        
-        internal static string SLog_UIComponentsInitialized {
+        }
+
+        public static string SLog_UIComponentsInitialized {
             get {
                 return ResourceManager.GetString("SLog_UIComponentsInitialized", resourceCulture);
             }
-        }        
-        internal static string SLog_StartingImageLoading {
+        }
+
+        public static string SLog_StartingImageLoading {
             get {
                 return ResourceManager.GetString("SLog_StartingImageLoading", resourceCulture);
             }
-        }        
-        internal static string SLog_ImageLoadingCompleted {
+        }
+
+        public static string SLog_ImageLoadingCompleted {
             get {
                 return ResourceManager.GetString("SLog_ImageLoadingCompleted", resourceCulture);
             }
-        }        
-        internal static string SLog_SlideshowStarted {
+        }
+
+        public static string SLog_SlideshowStarted {
             get {
                 return ResourceManager.GetString("SLog_SlideshowStarted", resourceCulture);
             }
-        }        
-        internal static string SLog_NoImagesFoundInDirectory {
+        }
+
+        public static string SLog_NoImagesFoundInDirectory {
             get {
                 return ResourceManager.GetString("SLog_NoImagesFoundInDirectory", resourceCulture);
             }
-        }        
-        internal static string SLog_ErrorDuringWindowLoad {
+        }
+
+        public static string SLog_ErrorDuringWindowLoad {
             get {
                 return ResourceManager.GetString("SLog_ErrorDuringWindowLoad", resourceCulture);
             }
-        }        
-        internal static string SLog_LoadingFromCLI {
+        }
+
+        public static string SLog_LoadingFromCLI {
             get {
                 return ResourceManager.GetString("SLog_LoadingFromCLI", resourceCulture);
             }
-        }        
-        internal static string SLog_SetPaneCount {
+        }
+
+        public static string SLog_SetPaneCount {
             get {
                 return ResourceManager.GetString("SLog_SetPaneCount", resourceCulture);
             }
-        }        
-        internal static string SLog_FullscreenModeWillBeActivated {
+        }
+
+        public static string SLog_FullscreenModeWillBeActivated {
             get {
                 return ResourceManager.GetString("SLog_FullscreenModeWillBeActivated", resourceCulture);
             }
-        }        
-        internal static string SLog_ActivatedFullscreenMode {
+        }
+
+        public static string SLog_ActivatedFullscreenMode {
             get {
                 return ResourceManager.GetString("SLog_ActivatedFullscreenMode", resourceCulture);
             }
-        }        
-        internal static string SLog_CLIModeLoadedImages {
+        }
+
+        public static string SLog_CLIModeLoadedImages {
             get {
                 return ResourceManager.GetString("SLog_CLIModeLoadedImages", resourceCulture);
             }
-        }        
-        internal static string SLog_CLIModeNoImages {
+        }
+
+        public static string SLog_CLIModeNoImages {
             get {
                 return ResourceManager.GetString("SLog_CLIModeNoImages", resourceCulture);
             }
-        }        
-        internal static string SLog_ErrorLoadingFromCLI {
+        }
+
+        public static string SLog_ErrorLoadingFromCLI {
             get {
                 return ResourceManager.GetString("SLog_ErrorLoadingFromCLI", resourceCulture);
             }
-        }        
-        internal static string SLog_RootDirectory {
+        }
+
+        public static string SLog_RootDirectory {
             get {
                 return ResourceManager.GetString("SLog_RootDirectory", resourceCulture);
             }
-        }        
-        internal static string SLog_RootDirectoryNotSpecified {
+        }
+
+        public static string SLog_RootDirectoryNotSpecified {
             get {
                 return ResourceManager.GetString("SLog_RootDirectoryNotSpecified", resourceCulture);
             }
-        }        
-        internal static string SLog_FolderPattern {
+        }
+
+        public static string SLog_FolderPattern {
             get {
                 return ResourceManager.GetString("SLog_FolderPattern", resourceCulture);
             }
-        }        
-        internal static string SLog_PaneCount {
+        }
+
+        public static string SLog_PaneCount {
             get {
                 return ResourceManager.GetString("SLog_PaneCount", resourceCulture);
             }
-        }        
-        internal static string SLog_FullscreenEnabled {
+        }
+
+        public static string SLog_FullscreenEnabled {
             get {
                 return ResourceManager.GetString("SLog_FullscreenEnabled", resourceCulture);
             }
-        }        
-        internal static string SLog_UnknownArgument {
+        }
+
+        public static string SLog_UnknownArgument {
             get {
                 return ResourceManager.GetString("SLog_UnknownArgument", resourceCulture);
             }
-        }        
-        internal static string SLog_ArgumentRequiresValue {
+        }
+
+        public static string SLog_ArgumentRequiresValue {
             get {
                 return ResourceManager.GetString("SLog_ArgumentRequiresValue", resourceCulture);
             }
-        }        
-        internal static string SLog_ArgumentRequiresPositiveInteger {
+        }
+
+        public static string SLog_ArgumentRequiresPositiveInteger {
             get {
                 return ResourceManager.GetString("SLog_ArgumentRequiresPositiveInteger", resourceCulture);
             }
-        }        
-        internal static string SLog_ApplicationStarting {
+        }
+
+        public static string SLog_ApplicationStarting {
             get {
                 return ResourceManager.GetString("SLog_ApplicationStarting", resourceCulture);
             }
-        }        
-        internal static string SLog_UnhandledException {
+        }
+
+        public static string SLog_UnhandledException {
             get {
                 return ResourceManager.GetString("SLog_UnhandledException", resourceCulture);
             }
-        }        
-        internal static string SLog_UnhandledDispatcherException {
+        }
+
+        public static string SLog_UnhandledDispatcherException {
             get {
                 return ResourceManager.GetString("SLog_UnhandledDispatcherException", resourceCulture);
             }
-        }        
-        internal static string SLog_ApplicationExiting {
+        }
+
+        public static string SLog_ApplicationExiting {
             get {
                 return ResourceManager.GetString("SLog_ApplicationExiting", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_Title {
+        }
+
+        public static string Shortcuts_Title {
             get {
                 return ResourceManager.GetString("Shortcuts_Title", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_ArrowKeys {
+        }
+
+        public static string Shortcuts_ArrowKeys {
             get {
                 return ResourceManager.GetString("Shortcuts_ArrowKeys", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_ArrowKeys_Desc {
+        }
+
+        public static string Shortcuts_ArrowKeys_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_ArrowKeys_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_SpaceEnter {
+        }
+
+        public static string Shortcuts_SpaceEnter {
             get {
                 return ResourceManager.GetString("Shortcuts_SpaceEnter", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_SpaceEnter_Desc {
+        }
+
+        public static string Shortcuts_SpaceEnter_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_SpaceEnter_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_F {
+        }
+
+        public static string Shortcuts_F {
             get {
                 return ResourceManager.GetString("Shortcuts_F", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_F_Desc {
+        }
+
+        public static string Shortcuts_F_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_F_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_D {
+        }
+
+        public static string Shortcuts_D {
             get {
                 return ResourceManager.GetString("Shortcuts_D", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_D_Desc {
+        }
+
+        public static string Shortcuts_D_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_D_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_ShiftLess {
+        }
+
+        public static string Shortcuts_ShiftLess {
             get {
                 return ResourceManager.GetString("Shortcuts_ShiftLess", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_ShiftLess_Desc {
+        }
+
+        public static string Shortcuts_ShiftLess_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_ShiftLess_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_ShiftGreater {
+        }
+
+        public static string Shortcuts_ShiftGreater {
             get {
                 return ResourceManager.GetString("Shortcuts_ShiftGreater", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_ShiftGreater_Desc {
+        }
+
+        public static string Shortcuts_ShiftGreater_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_ShiftGreater_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_PlusMinus {
+        }
+
+        public static string Shortcuts_PlusMinus {
             get {
                 return ResourceManager.GetString("Shortcuts_PlusMinus", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_PlusMinus_Desc {
+        }
+
+        public static string Shortcuts_PlusMinus_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_PlusMinus_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_M {
+        }
+
+        public static string Shortcuts_M {
             get {
                 return ResourceManager.GetString("Shortcuts_M", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_M_Desc {
+        }
+
+        public static string Shortcuts_M_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_M_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_N {
+        }
+
+        public static string Shortcuts_N {
             get {
                 return ResourceManager.GetString("Shortcuts_N", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_N_Desc {
+        }
+
+        public static string Shortcuts_N_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_N_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_I {
+        }
+
+        public static string Shortcuts_I {
             get {
                 return ResourceManager.GetString("Shortcuts_I", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_I_Desc {
+        }
+
+        public static string Shortcuts_I_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_I_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_CtrlW {
+        }
+
+        public static string Shortcuts_CtrlW {
             get {
                 return ResourceManager.GetString("Shortcuts_CtrlW", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_CtrlW_Desc {
+        }
+
+        public static string Shortcuts_CtrlW_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_CtrlW_Desc", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_CtrlQ {
+        }
+
+        public static string Shortcuts_CtrlQ {
             get {
                 return ResourceManager.GetString("Shortcuts_CtrlQ", resourceCulture);
             }
-        }        
-        internal static string Shortcuts_CtrlQ_Desc {
+        }
+
+        public static string Shortcuts_CtrlQ_Desc {
             get {
                 return ResourceManager.GetString("Shortcuts_CtrlQ_Desc", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Usage {
+        }
+
+        public static string CLI_Help_Usage {
             get {
                 return ResourceManager.GetString("CLI_Help_Usage", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Options {
+        }
+
+        public static string CLI_Help_Options {
             get {
                 return ResourceManager.GetString("CLI_Help_Options", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Dir {
+        }
+
+        public static string CLI_Help_Dir {
             get {
                 return ResourceManager.GetString("CLI_Help_Dir", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Pattern {
+        }
+
+        public static string CLI_Help_Pattern {
             get {
                 return ResourceManager.GetString("CLI_Help_Pattern", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Mosaic {
+        }
+
+        public static string CLI_Help_Mosaic {
             get {
                 return ResourceManager.GetString("CLI_Help_Mosaic", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Fullscreen {
+        }
+
+        public static string CLI_Help_Fullscreen {
             get {
                 return ResourceManager.GetString("CLI_Help_Fullscreen", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Help {
+        }
+
+        public static string CLI_Help_Help {
             get {
                 return ResourceManager.GetString("CLI_Help_Help", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Examples {
+        }
+
+        public static string CLI_Help_Examples {
             get {
                 return ResourceManager.GetString("CLI_Help_Examples", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Example1 {
+        }
+
+        public static string CLI_Help_Example1 {
             get {
                 return ResourceManager.GetString("CLI_Help_Example1", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_Example2 {
+        }
+
+        public static string CLI_Help_Example2 {
             get {
                 return ResourceManager.GetString("CLI_Help_Example2", resourceCulture);
             }
-        }        
-        internal static string CLI_Help_KeyboardShortcuts {
+        }
+
+        public static string CLI_Help_KeyboardShortcuts {
             get {
                 return ResourceManager.GetString("CLI_Help_KeyboardShortcuts", resourceCulture);
             }

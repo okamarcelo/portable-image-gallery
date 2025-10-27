@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,69 +12,152 @@ namespace ImageGallery.Services;
 /// Manages debug logging and console display.
 /// Single Responsibility: Handle log collection and console UI.
 /// </summary>
-public class DebugLogger
+public class DebugLogger : IDisposable
+{
+    private readonly StringBuilder logBuilder = new StringBuilder();
+    private Border? consoleContainer;
+    private TextBox? logTextBox;
+    private StreamWriter? logFileWriter;
+    private readonly string logFilePath;
+    private const int MaxLogLength = 100000; // Limit log to 100KB to prevent crashes
+
+    public bool IsVisible { get; private set; } = false;
+
+    public DebugLogger()
     {
-        private readonly StringBuilder logBuilder = new StringBuilder();
-        private Border? consoleContainer;
-        private TextBlock? logTextBlock;
-
-        public bool IsVisible { get; private set; } = false;
-
-        public void Initialize(Border console, TextBlock textBlock)
+        // Write log directly to current directory
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        logFilePath = $"imagegallery_{timestamp}.log";
+        
+        try
         {
-            consoleContainer = console;
-            logTextBlock = textBlock;
+            logFileWriter = new StreamWriter(logFilePath, append: true) { AutoFlush = true };
+            LogToFile($"=== Log started at {DateTime.Now} ===");
+            LogToFile($"Log file: {Path.GetFullPath(logFilePath)}");
         }
+        catch (Exception ex)
+        {
+            // Try to log the error somewhere
+            try
+            {
+                File.WriteAllText("error.txt", $"Failed to create log: {ex.Message}");
+            }
+            catch
+            {
+            }
+        }
+    }
 
-        public void Log(string message)
+    public void Initialize(Border console, TextBox textBox)
+    {
+        consoleContainer = console;
+        logTextBox = textBox;
+    }
+
+    public void Log(string message)
+    {
+        try
         {
             string timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
+            
+            // Write to file first (most important)
+            LogToFile(timestampedMessage);
+            
+            // Add to in-memory log with size limit
             logBuilder.AppendLine(timestampedMessage);
             
-            if (logTextBlock != null)
+            // Trim log if too large (keep last 50KB)
+            if (logBuilder.Length > MaxLogLength)
+            {
+                var text = logBuilder.ToString();
+                var keepFrom = text.Length - (MaxLogLength / 2);
+                logBuilder.Clear();
+                logBuilder.AppendLine("... [earlier logs truncated] ...");
+                logBuilder.Append(text.Substring(keepFrom));
+            }
+            
+            // Update UI
+            if (logTextBox != null)
             {
                 // Ensure we're on the UI thread
-                if (logTextBlock.Dispatcher.CheckAccess())
+                if (logTextBox.Dispatcher.CheckAccess())
                 {
-                    logTextBlock.Text = logBuilder.ToString();
-                    AutoScrollToBottom();
+                    UpdateLogTextBox();
                 }
                 else
                 {
-                    logTextBlock.Dispatcher.InvokeAsync(() =>
-                    {
-                        logTextBlock.Text = logBuilder.ToString();
-                        AutoScrollToBottom();
-                    });
+                    logTextBox.Dispatcher.InvokeAsync(() => UpdateLogTextBox());
                 }
             }
         }
-
-        public void Toggle()
+        catch (Exception ex)
         {
-            IsVisible = !IsVisible;
-            
-            if (consoleContainer != null)
+            // Last resort - write error to file
+            try
             {
-                consoleContainer.Visibility = IsVisible ? Visibility.Visible : Visibility.Collapsed;
+                File.WriteAllText($"logger_error_{DateTime.Now:yyyyMMdd_HHmmss}.txt", 
+                    $"Error in DebugLogger.Log: {ex}\nOriginal message: {message}");
             }
-
-            Log(IsVisible ? Strings.Status_DebugConsoleShown : Strings.Status_DebugConsoleHidden);
-        }
-
-        private void AutoScrollToBottom()
-        {
-            if (consoleContainer?.Visibility == Visibility.Visible && logTextBlock != null)
+            catch
             {
-                var scrollViewer = FindVisualChild<ScrollViewer>(consoleContainer);
-                scrollViewer?.ScrollToEnd();
+                // Give up silently
             }
         }
+    }
 
-        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    private void UpdateLogTextBox()
+    {
+        try
         {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            if (logTextBox != null)
             {
+                logTextBox.Text = logBuilder.ToString();
+                AutoScrollToBottom();
+            }
+        }
+        catch
+        {
+            // Ignore UI update errors
+        }
+    }
+
+    private void LogToFile(string message)
+    {
+        try
+        {
+            logFileWriter?.WriteLine(message);
+        }
+        catch
+        {
+            // Ignore file logging errors
+        }
+    }
+
+    public void Toggle()
+    {
+        IsVisible = !IsVisible;
+        
+        if (consoleContainer != null)
+        {
+            consoleContainer.Visibility = IsVisible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        Log(IsVisible ? Strings.Status_DebugConsoleShown : Strings.Status_DebugConsoleHidden);
+    }
+
+    private void AutoScrollToBottom()
+    {
+        if (consoleContainer?.Visibility == Visibility.Visible && logTextBox != null)
+        {
+            var scrollViewer = FindVisualChild<ScrollViewer>(consoleContainer);
+            scrollViewer?.ScrollToEnd();
+        }
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
             var child = VisualTreeHelper.GetChild(parent, i);
             if (child is T typedChild)
                 return typedChild;
@@ -83,5 +167,19 @@ public class DebugLogger
                 return result;
         }
         return null;
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            LogToFile($"=== Log ended at {DateTime.Now} ===");
+            logFileWriter?.Flush();
+            logFileWriter?.Dispose();
+        }
+        catch
+        {
+            // Ignore
+        }
     }
 }

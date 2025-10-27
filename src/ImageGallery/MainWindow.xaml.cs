@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -48,7 +49,8 @@ public partial class MainWindow : Window
 
             // Initialize services
             Log.Debug(Strings.SLog_CreatingServiceInstances);
-            imageManager = new ImageManager();
+            imageManager = new ImageManager(cacheSize: 32, preloadAhead: 16, keepBehind: 8);
+            imageManager.VerboseLogging = true; // Enable verbose logging for debugging
             zoomController = new ZoomController();
             mosaicManager = new MosaicManager();
             slideshowController = new SlideshowController();
@@ -155,9 +157,9 @@ public partial class MainWindow : Window
 
             Log.Information(Strings.SLog_StartingImageLoading);
             await imageManager.LoadImagesAsync();
-            Log.Information(string.Format(Strings.SLog_ImageLoadingCompleted, imageManager.Images.Count));
+            Log.Information(string.Format(Strings.SLog_ImageLoadingCompleted, imageManager.ImageCount));
 
-            if (imageManager.Images.Count > 0)
+            if (imageManager.ImageCount > 0)
             {
                 // Shuffle images
                 ShuffleImages();
@@ -253,7 +255,7 @@ public partial class MainWindow : Window
 
             await imageManager.LoadImagesFromDirectoryAsync(cliArgs.RootDirectory!);
             
-            if (imageManager.Images.Count > 0)
+            if (imageManager.ImageCount > 0)
             {
                 ShuffleImages();
                 ShowImage(0);
@@ -267,7 +269,7 @@ public partial class MainWindow : Window
                     Log.Information(Strings.SLog_ActivatedFullscreenMode);
                 }
                 
-                Log.Information(string.Format(Strings.SLog_CLIModeLoadedImages, imageManager.Images.Count));
+                Log.Information(string.Format(Strings.SLog_CLIModeLoadedImages, imageManager.ImageCount));
             }
             else
             {
@@ -364,7 +366,7 @@ public partial class MainWindow : Window
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             // Update mosaic layout when window size changes (for orientation-aware 2-pane layout)
-            if (mosaicManager.PaneCount == 2 && imageManager.Images.Count > 0)
+            if (mosaicManager.PaneCount == 2 && imageManager.ImageCount > 0)
             {
                 UpdateMosaicLayout();
             }
@@ -372,33 +374,45 @@ public partial class MainWindow : Window
 
         private void OnSlideshowTick()
         {
-            currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.Images.Count;
+            currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.ImageCount;
             mosaicManager.ResetPaneIndex();
-            ShowImage(currentIndex);
+            _ = ShowImageAsync(currentIndex);
+        }
+
+        private async Task ShowImageAsync(int index)
+        {
+            debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {imageManager.ImageCount}");
+            
+            if (imageManager.ImageCount > 0 && index >= 0 && index < imageManager.ImageCount)
+            {
+                // Get images to display (supports both lazy loading and legacy mode)
+                debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={mosaicManager.PaneCount})");
+                var imagesToShow = await imageManager.GetImagesAsync(index, mosaicManager.PaneCount);
+                
+                debugLogger.Log($"[SHOW] GetImagesAsync returned {imagesToShow.Count} images");
+                
+                if (imagesToShow.Count > 0)
+                {
+                    MosaicDisplay.ItemsSource = imagesToShow;
+
+                    // Update the grid layout with window dimensions for orientation detection
+                    UpdateMosaicLayout();
+
+                    var fileName = imageManager.GetImageFileName(index);
+                    string logMsg = $"Showing: {fileName}";
+                    if (mosaicManager.PaneCount > 1)
+                        logMsg += $" (+{mosaicManager.PaneCount - 1} more)";
+                    debugLogger.Log(logMsg);
+                    
+                    // Preload next images in background for smooth playback (after displaying current images)
+                    _ = imageManager.PreloadImagesAsync(index, mosaicManager.PaneCount);
+                }
+            }
         }
 
         private void ShowImage(int index)
         {
-            if (imageManager.Images.Count > 0 && index >= 0 && index < imageManager.Images.Count)
-            {
-                // Prepare list of images to display based on mosaic pane count
-                var imagesToShow = new List<BitmapImage>();
-                for (int i = 0; i < mosaicManager.PaneCount; i++)
-                {
-                    int imageIndex = (index + i) % imageManager.Images.Count;
-                    imagesToShow.Add(imageManager.Images[imageIndex]);
-                }
-
-                MosaicDisplay.ItemsSource = imagesToShow;
-
-                // Update the grid layout with window dimensions for orientation detection
-                UpdateMosaicLayout();
-
-                string logMsg = $"Showing: {imageManager.ImageFileNames[index]}";
-                if (mosaicManager.PaneCount > 1)
-                    logMsg += $" (+{mosaicManager.PaneCount - 1} more)";
-                debugLogger.Log(logMsg);
-            }
+            _ = ShowImageAsync(index);
         }
 
         private void UpdateMosaicLayout()
@@ -509,8 +523,10 @@ public partial class MainWindow : Window
 
         private void NavigateNext()
         {
+            debugLogger.Log($"[NAV] Next pressed - currentIndex: {currentIndex}, imageCount: {imageManager.ImageCount}, paneCount: {mosaicManager.PaneCount}");
             slideshowController.Stop();
-            currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.Images.Count;
+            currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.ImageCount;
+            debugLogger.Log($"[NAV] New currentIndex after Next: {currentIndex}");
             mosaicManager.ResetPaneIndex();
             ShowImage(currentIndex);
             FlashSide(true);
@@ -520,8 +536,10 @@ public partial class MainWindow : Window
 
         private void NavigatePrevious()
         {
+            debugLogger.Log($"[NAV] Previous pressed - currentIndex: {currentIndex}, imageCount: {imageManager.ImageCount}, paneCount: {mosaicManager.PaneCount}");
             slideshowController.Stop();
-            currentIndex = (currentIndex - mosaicManager.PaneCount + imageManager.Images.Count) % imageManager.Images.Count;
+            currentIndex = (currentIndex - mosaicManager.PaneCount + imageManager.ImageCount) % imageManager.ImageCount;
+            debugLogger.Log($"[NAV] New currentIndex after Previous: {currentIndex}");
             mosaicManager.ResetPaneIndex();
             ShowImage(currentIndex);
             FlashSide(false);
@@ -555,7 +573,7 @@ public partial class MainWindow : Window
                 ImportProgressStack.Visibility = Visibility.Collapsed;
                 await imageManager.LoadImagesAsync();
                 
-                if (imageManager.Images.Count > 0)
+                if (imageManager.ImageCount > 0)
                 {
                     ShuffleImages();
                     ShowImage(0);
@@ -581,7 +599,7 @@ public partial class MainWindow : Window
                 if (patternDialog.ShowDialog() != true)
                 {
                     Log.Information("User cancelled pattern input");
-                    if (imageManager.Images.Count == 0)
+                    if (imageManager.ImageCount == 0)
                     {
                         LoadingText.Text = "No pattern specified. Press I to select a directory.";
                         LoadingProgressStack.Visibility = Visibility.Collapsed;
@@ -620,13 +638,13 @@ public partial class MainWindow : Window
 
                     await imageManager.LoadImagesFromDirectoryAsync(selectedPath);
                     
-                    if (imageManager.Images.Count > 0)
+                    if (imageManager.ImageCount > 0)
                     {
                         ShuffleImages();
                         ShowImage(0);
                         slideshowController.Start();
                         LoadingOverlay.Visibility = Visibility.Collapsed;
-                        Log.Information($"Loaded {imageManager.Images.Count} images from selected directory");
+                        Log.Information($"Loaded {imageManager.ImageCount} images from selected directory");
                     }
                     else
                     {
@@ -638,7 +656,7 @@ public partial class MainWindow : Window
                 else
                 {
                     Log.Information("User cancelled folder selection");
-                    if (imageManager.Images.Count == 0)
+                    if (imageManager.ImageCount == 0)
                     {
                         LoadingText.Text = "No directory selected. Press I to select a directory.";
                         LoadingProgressStack.Visibility = Visibility.Collapsed;
