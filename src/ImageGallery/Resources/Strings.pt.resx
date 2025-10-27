@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" msdata:Ordinal="5" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Window Titles -->
+  <data name="MainWindow_Title" xml:space="preserve">
+    <value>Galeria de Imagens</value>
+  </data>
+  <data name="InputDialog_Title" xml:space="preserve">
+    <value>Padrao de Pasta</value>
+  </data>
+  
+  <!-- Loading Messages -->
+  <data name="Loading_Images" xml:space="preserve">
+    <value>Carregando imagens...</value>
+  </data>
+  <data name="Loading_ImagesFrom" xml:space="preserve">
+    <value>Carregando imagens de {0}...</value>
+    <comment>{0} is the pattern text</comment>
+  </data>
+  <data name="Importing_Files" xml:space="preserve">
+    <value>Importando arquivos...</value>
+  </data>
+  
+  <!-- Progress Messages -->
+  <data name="Progress_CurrentTotal" xml:space="preserve">
+    <value>{0} / {1}</value>
+    <comment>{0} is current, {1} is total</comment>
+  </data>
+  <data name="Progress_CurrentTotalErrors" xml:space="preserve">
+    <value>{0} / {1} ({2} erros)</value>
+    <comment>{0} is current, {1} is total, {2} is error count</comment>
+  </data>
+  
+  <!-- Error Messages -->
+  <data name="Error_NoImages" xml:space="preserve">
+    <value>Nenhuma imagem encontrada. Selecione um diretorio raiz para pesquisar {0}.{0}.</value>
+    <comment>{0} is the pattern description</comment>
+  </data>
+  <data name="Error_NoImagesInPattern" xml:space="preserve">
+    <value>Nenhuma imagem encontrada em {0}. Pressione I para selecionar um diretorio.</value>
+    <comment>{0} is the pattern text</comment>
+  </data>
+  <data name="Error_InitializationTitle" xml:space="preserve">
+    <value>Erro de Inicializacao</value>
+  </data>
+  <data name="Error_InitializationMessage" xml:space="preserve">
+    <value>Falha ao inicializar aplicacao:\n{0}\n{0}</value>
+    <comment>{0} is the error message</comment>
+  </data>
+  <data name="Error_LoadTitle" xml:space="preserve">
+    <value>Erro de Carregamento</value>
+  </data>
+  <data name="Error_LoadMessage" xml:space="preserve">
+    <value>Erro ao carregar aplicacao:\n{0}\n{0}</value>
+    <comment>{0} is the error message</comment>
+  </data>
+  <data name="Error_LoadImagesMessage" xml:space="preserve">
+    <value>Erro ao carregar imagens:\n{0}\n{0}</value>
+    <comment>{0} is the error message</comment>
+  </data>
+  
+  <!-- Pattern Messages -->
+  <data name="Pattern_AllSubdirectories" xml:space="preserve">
+    <value>todos os subdiretorios</value>
+  </data>
+  <data name="Pattern_SpecificFolders" xml:space="preserve">
+    <value>'{0}pastas '{0}'</value>
+    <comment>{0} is the folder pattern</comment>
+  </data>
+  
+  <!-- Input Dialog -->
+  <data name="InputDialog_Prompt" xml:space="preserve">
+    <value>Digite o padrao do nome da pasta para pesquisar:</value>
+  </data>
+  <data name="InputDialog_Help" xml:space="preserve">
+    <value>(e.g., 'images' or 'photos'; leave empty for todos os subdiretorios)</value>
+  </data>
+  <data name="Button_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Button_Cancelar" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  
+  <!-- Status/Log Messages -->
+  <data name="Status_Pausado" xml:space="preserve">
+    <value>Pausado</value>
+  </data>
+  <data name="Status_Retomado" xml:space="preserve">
+    <value>Retomado</value>
+  </data>
+  <data name="Status_SlideshowStarted" xml:space="preserve">
+    <value>Apresentacao iniciada</value>
+  </data>
+  <data name="Status_SlideshowStopped" xml:space="preserve">
+    <value>Apresentacao parada</value>
+  </data>
+  <data name="Status_ApplicationStarted" xml:space="preserve">
+    <value>Aplicacao iniciada</value>
+  </data>
+  <data name="Status_DebugConsoleShown" xml:space="preserve">
+    <value>Console de depuracao exibido</value>
+  </data>
+  <data name="Status_DebugConsoleHidden" xml:space="preserve">
+    <value>Console de depuracao ocultado</value>
+  </data>
+  
+  <!-- Log Messages with format -->
+  <data name="Log_Zoom" xml:space="preserve">
+    <value>Zoom: {0}%</value>
+    <comment>{0} is zoom percentage</comment>
+  </data>
+  <data name="Log_SlideshowSpeed" xml:space="preserve">
+    <value>Velocidade da apresentacao: {0:0.0}s</value>
+    <comment>{0} is interval in seconds</comment>
+  </data>
+  <data name="Log_MosaicMode" xml:space="preserve">
+    <value>Modo mosaico: {0} painel{1}</value>
+    <comment>{0} is painel count, {1} is plural 's' or empty string</comment>
+  </data>
+  <data name="Log_Timestamp" xml:space="preserve">
+    <value>[{0:HH:mm:ss}] {1}</value>
+    <comment>{0} is DateTime, {1} is message</comment>
+  </data>
+  
+  <!-- Structured Log Messages (for Serilog) -->
+  <data name="SLog_MainWindowInitializing" xml:space="preserve">
+    <value>MainWindow initializing</value>
+  </data>
+  <data name="SLog_CreatingServiceInstances" xml:space="preserve">
+    <value>Creating service instances</value>
+  </data>
+  <data name="SLog_SettingUpEventHandlers" xml:space="preserve">
+    <value>Setting up event handlers</value>
+  </data>
+  <data name="SLog_MainWindowInitializedSuccessfully" xml:space="preserve">
+    <value>MainWindow initialized successfully</value>
+  </data>
+  <data name="SLog_FailedToInitializeMainWindow" xml:space="preserve">
+    <value>Failed to initialize MainWindow</value>
+  </data>
+  <data name="SLog_WindowLoaded" xml:space="preserve">
+    <value>Window loaded, initializing UI components</value>
+  </data>
+  <data name="SLog_UIComponentsInitialized" xml:space="preserve">
+    <value>UI components initialized</value>
+  </data>
+  <data name="SLog_StartingImageLoading" xml:space="preserve">
+    <value>Starting image loading</value>
+  </data>
+  <data name="SLog_ImageLoadingCompleted" xml:space="preserve">
+    <value>Image loading completed. Found {0} images</value>
+    <comment>{0} is image count</comment>
+  </data>
+  <data name="SLog_SlideshowStarted" xml:space="preserve">
+    <value>Apresentacao iniciada</value>
+  </data>
+  <data name="SLog_NoImagesFoundInDirectory" xml:space="preserve">
+    <value>No images found in directory</value>
+  </data>
+  <data name="SLog_ErrorDuringWindowLoad" xml:space="preserve">
+    <value>Error during window load</value>
+  </data>
+  <data name="SLog_LoadingFromCLI" xml:space="preserve">
+    <value>Loading from CLI arguments</value>
+  </data>
+  <data name="SLog_SetPaneCount" xml:space="preserve">
+    <value>Set painel count to {0}</value>
+    <comment>{0} is painel count</comment>
+  </data>
+  <data name="SLog_FullscreenModeWillBeActivated" xml:space="preserve">
+    <value>CLI: Fullscreen mode will be activated</value>
+  </data>
+  <data name="SLog_ActivatedFullscreenMode" xml:space="preserve">
+    <value>CLI: Activated fullscreen mode</value>
+  </data>
+  <data name="SLog_CLIModeLoadedImages" xml:space="preserve">
+    <value>CLI mode: Loaded {0} images, started slideshow</value>
+    <comment>{0} is image count</comment>
+  </data>
+  <data name="SLog_CLIModeNoImages" xml:space="preserve">
+    <value>CLI mode: No images found</value>
+  </data>
+  <data name="SLog_ErrorLoadingFromCLI" xml:space="preserve">
+    <value>Error loading from CLI arguments</value>
+  </data>
+  <data name="SLog_RootDirectory" xml:space="preserve">
+    <value>CLI: Root directory = {0}</value>
+    <comment>{0} is directory path</comment>
+  </data>
+  <data name="SLog_RootDirectoryNotSpecified" xml:space="preserve">
+    <value>CLI: Root directory not specified, using current directory: {0}</value>
+    <comment>{0} is directory path</comment>
+  </data>
+  <data name="SLog_FolderPattern" xml:space="preserve">
+    <value>CLI: Folder pattern = '{0}' (empty = todos os subdiretorios)</value>
+    <comment>{0} is folder pattern</comment>
+  </data>
+  <data name="SLog_PaneCount" xml:space="preserve">
+    <value>CLI: painel count = {0}</value>
+    <comment>{0} is painel count</comment>
+  </data>
+  <data name="SLog_FullscreenEnabled" xml:space="preserve">
+    <value>CLI: Fullscreen mode enabled</value>
+  </data>
+  <data name="SLog_UnknownArgument" xml:space="preserve">
+    <value>CLI: Unknown argument '{0}'</value>
+    <comment>{0} is argument name</comment>
+  </data>
+  <data name="SLog_ArgumentRequiresValue" xml:space="preserve">
+    <value>CLI: {0} requires a value</value>
+    <comment>{0} is argument name</comment>
+  </data>
+  <data name="SLog_ArgumentRequiresPositiveInteger" xml:space="preserve">
+    <value>CLI: {0} requires a positive integer value</value>
+    <comment>{0} is argument name</comment>
+  </data>
+  <data name="SLog_ApplicationStarting" xml:space="preserve">
+    <value>Application starting with file logging enabled</value>
+  </data>
+  <data name="SLog_UnhandledException" xml:space="preserve">
+    <value>Unhandled exception occurred</value>
+  </data>
+  <data name="SLog_UnhandledDispatcherException" xml:space="preserve">
+    <value>Unhandled dispatcher exception</value>
+  </data>
+  <data name="SLog_ApplicationExiting" xml:space="preserve">
+    <value>Application exiting</value>
+  </data>
+</root>
