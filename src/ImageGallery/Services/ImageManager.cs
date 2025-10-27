@@ -202,14 +202,16 @@ public class ImageManager
 
                     if (useLazyLoading)
                     {
-                        // Lazy loading mode - just initialize cache with file paths
-                        LogMessage?.Invoke($"Initializing lazy loading cache with {allImageFiles.Count} images...");
+                        // Lazy loading mode - just initialize cache with file paths (no images loaded yet!)
+                        LogMessage?.Invoke($"[Lazy Loading] Found {allImageFiles.Count} images - initializing cache (not loading into memory)");
                         imageCache.Initialize(allImageFiles);
+                        
+                        // Report progress as complete immediately since we're not loading actual images
                         LoadProgressChanged?.Invoke(allImageFiles.Count, allImageFiles.Count);
                         
                         string successMessage = string.IsNullOrWhiteSpace(folderPattern)
-                            ? $"Found {allImageFiles.Count} images for lazy loading"
-                            : $"Found {allImageFiles.Count} images from '{folderPattern}' folders for lazy loading";
+                            ? $"[Lazy Loading] Ready with {allImageFiles.Count} images (0 loaded in memory, will load on-demand)"
+                            : $"[Lazy Loading] Ready with {allImageFiles.Count} images from '{folderPattern}' folders (0 loaded in memory)";
                         LogMessage?.Invoke(successMessage);
                     }
                     else

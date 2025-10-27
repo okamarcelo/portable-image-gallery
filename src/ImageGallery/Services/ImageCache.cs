@@ -58,7 +58,7 @@ public class ImageCache : IDisposable
             imageFilePaths[index++] = path;
         }
         
-        LogMessage?.Invoke($"Cache initialized with {imageFilePaths.Count} image paths");
+        LogMessage?.Invoke($"[ImageCache] Initialized with {imageFilePaths.Count} file paths (0 images in memory)");
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public class ImageCache : IDisposable
             if (image != null)
             {
                 cache[index] = image;
-                LogMessage?.Invoke($"Loaded image {index}: {Path.GetFileName(imageFilePaths[index])}");
+                LogMessage?.Invoke($"[ImageCache] Loaded image {index}: {Path.GetFileName(imageFilePaths[index])} (cache: {cache.Count}/{cacheSize})");
             }
 
             return image;
@@ -143,7 +143,7 @@ public class ImageCache : IDisposable
             
             if (keysToRemove.Count > 0)
             {
-                LogMessage?.Invoke($"Evicted {keysToRemove.Count} images from cache");
+                LogMessage?.Invoke($"[ImageCache] Evicted {keysToRemove.Count} images from cache (freed memory)");
             }
 
             // Preload images in the window that aren't cached
@@ -162,6 +162,7 @@ public class ImageCache : IDisposable
                             try
                             {
                                 cache[index] = image;
+                                LogMessage?.Invoke($"[ImageCache] Preloaded image {index}");
                             }
                             finally
                             {
@@ -174,7 +175,7 @@ public class ImageCache : IDisposable
 
             await Task.WhenAll(tasks);
             
-            LogMessage?.Invoke($"Cache window: [{windowStart}-{windowEnd}], cached: {cache.Count}/{cacheSize}");
+            LogMessage?.Invoke($"[ImageCache] Window: [{windowStart}-{windowEnd}], in cache: {cache.Count}/{cacheSize} images");
         }
         finally
         {
@@ -237,7 +238,7 @@ public class ImageCache : IDisposable
             imageFilePaths[i] = paths[i];
         }
         
-        LogMessage?.Invoke($"Shuffled {imageFilePaths.Count} images, cache cleared");
+        LogMessage?.Invoke($"[ImageCache] Shuffled {imageFilePaths.Count} images, cache cleared - will reload on demand");
     }
 
     private async Task<BitmapImage?> LoadImageAsync(string filePath)
