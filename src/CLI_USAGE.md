@@ -10,11 +10,12 @@ ImageGallery.exe [-d|--dir <directory>] [-p|--pattern <pattern>] [-m|--mosaic <c
 
 ## Parameters
 
-### -d, --dir <directory> (Required for CLI mode)
+### -d, --dir <directory> (Optional)
 The root directory path to search for images.
 
-- **If not provided**: The application starts with the regular GUI prompt screen
-- **If provided**: Enables CLI mode and automatically loads images from the specified directory
+- **If not provided and no other parameters**: The application starts with the regular GUI prompt screen
+- **If not provided but -p or -m are specified**: Uses the current working directory
+- **If provided**: Uses the specified directory path
 
 **Examples:**
 - `-d "C:\Photos"`
@@ -108,16 +109,32 @@ ImageGallery.exe --mosaic 2 --dir "D:\Images" --pattern "gallery"
 ```
 Parameters can be provided in any order.
 
+### Example 10: Using current directory (no -d parameter)
+```
+ImageGallery.exe -p "images" -m 4
+ImageGallery.exe --pattern "photos"
+ImageGallery.exe -m 9
+```
+When `-p` or `-m` is specified without `-d`, uses the current working directory. This is useful when you navigate to a photo directory in the terminal first, then launch the application.
+
+For example:
+```
+cd C:\MyPhotos
+ImageGallery.exe -p "vacation" -m 4
+```
+This will search for folders named "vacation" in `C:\MyPhotos` and display with a 2x2 grid.
+
 ## Notes
 
 1. **Paths with spaces**: Wrap paths in quotes if they contain spaces
 2. **Pattern matching**: Folder pattern is case-sensitive and must match exactly
 3. **Empty pattern**: Omit `-p`/`--pattern` or use it without a value to search all subdirectories
-4. **Parameter order**: Parameters can be in any order (no longer positional)
-5. **Short vs long options**: Use `-d`, `-p`, `-m` for short form or `--dir`, `--pattern`, `--mosaic` for long form
-6. **Case insensitive flags**: Flags are case-insensitive (`-D` and `-d` are equivalent)
-7. **Error handling**: If the directory doesn't exist or contains no images, the application will show an error message
-8. **Interactive mode**: Even in CLI mode, you can still use keyboard shortcuts to change settings (press `I` to select a different directory)
+4. **Current directory**: If `-p` or `-m` is used without `-d`, the current working directory is used
+5. **Parameter order**: Parameters can be in any order (no longer positional)
+6. **Short vs long options**: Use `-d`, `-p`, `-m` for short form or `--dir`, `--pattern`, `--mosaic` for long form
+7. **Case insensitive flags**: Flags are case-insensitive (`-D` and `-d` are equivalent)
+8. **Error handling**: If the directory doesn't exist or contains no images, the application will show an error message
+9. **Interactive mode**: Even in CLI mode, you can still use keyboard shortcuts to change settings (press `I` to select a different directory)
 
 ## Keyboard Shortcuts (Available in all modes)
 

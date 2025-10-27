@@ -55,6 +55,7 @@ public partial class App : Application
     private CommandLineArguments ParseCommandLineArguments(string[] args)
     {
         var cliArgs = new CommandLineArguments();
+        bool hasPatternOrMosaic = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -84,6 +85,7 @@ public partial class App : Application
                         
                     case "-p":
                     case "--pattern":
+                        hasPatternOrMosaic = true;
                         // Allow empty value for pattern (means all subdirectories)
                         if (i + 1 < args.Length && !args[i + 1].StartsWith("-"))
                         {
@@ -99,6 +101,7 @@ public partial class App : Application
                         
                     case "-m":
                     case "--mosaic":
+                        hasPatternOrMosaic = true;
                         if (value != null && int.TryParse(value, out int panes) && panes > 0)
                         {
                             cliArgs.PaneCount = panes;
@@ -116,6 +119,13 @@ public partial class App : Application
                         break;
                 }
             }
+        }
+
+        // If -p or -m was specified but -d was not, use current directory
+        if (string.IsNullOrWhiteSpace(cliArgs.RootDirectory) && hasPatternOrMosaic)
+        {
+            cliArgs.RootDirectory = Environment.CurrentDirectory;
+            Log.Information($"CLI: Root directory not specified, using current directory: {cliArgs.RootDirectory}");
         }
 
         return cliArgs;
