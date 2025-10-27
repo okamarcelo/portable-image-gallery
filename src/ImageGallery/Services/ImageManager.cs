@@ -9,19 +9,30 @@ using System.Windows.Media.Imaging;
 namespace ImageGallery.Services;
 
 /// <summary>
-/// Manages image loading, importing, and file operations.
-/// Single Responsibility: Handle all image-related file operations.
+/// Manages image loading, importing, and file operations with lazy loading support.
+/// Single Responsibility: Handle all image-related file operations and coordinate with cache.
 /// </summary>
 public class ImageManager
     {
-        private readonly List<BitmapImage> images = new List<BitmapImage>();
-        private readonly List<string> imageFileNames = new List<string>();
+        private readonly ImageCache imageCache;
         private readonly string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".heic", ".heif", ".webp" };
         private readonly Random random = new Random();
         private string folderPattern = "images"; // Default pattern
+        private bool useLazyLoading = true;
+
+        // Legacy support - will be empty when using lazy loading
+        private readonly List<BitmapImage> images = new List<BitmapImage>();
+        private readonly List<string> imageFileNames = new List<string>();
 
         public IReadOnlyList<BitmapImage> Images => images.AsReadOnly();
         public IReadOnlyList<string> ImageFileNames => imageFileNames.AsReadOnly();
+        public int ImageCount => useLazyLoading ? imageCache.TotalImages : images.Count;
+        public bool UseLazyLoading 
+        { 
+            get => useLazyLoading; 
+            set => useLazyLoading = value; 
+        }
+        
         public string FolderPattern 
         { 
             get => folderPattern; 
@@ -32,11 +43,69 @@ public class ImageManager
         public event Action<int, int, int>? ImportProgressChanged; // current, total, errorCount
         public event Action<string>? LogMessage;
 
+        public ImageManager(int cacheSize = 32, int preloadAhead = 16, int keepBehind = 8)
+        {
+            imageCache = new ImageCache(cacheSize, preloadAhead, keepBehind);
+            imageCache.LogMessage += msg => LogMessage?.Invoke(msg);
+        }
+
+        /// <summary>
+        /// Get images from cache for display. Used with lazy loading.
+        /// </summary>
+        public async Task<List<BitmapImage>> GetImagesAsync(int startIndex, int count)
+        {
+            if (!useLazyLoading)
+            {
+                // Legacy mode - return from memory
+                var result = new List<BitmapImage>();
+                for (int i = 0; i < count; i++)
+                {
+                    int index = (startIndex + i) % images.Count;
+                    if (index >= 0 && index < images.Count)
+                        result.Add(images[index]);
+                }
+                return result;
+            }
+
+            return await imageCache.GetImagesAsync(startIndex, count);
+        }
+
+        /// <summary>
+        /// Preload images around current position for smoother playback.
+        /// </summary>
+        public async Task PreloadImagesAsync(int currentIndex, int paneCount)
+        {
+            if (useLazyLoading)
+            {
+                await imageCache.PreloadWindowAsync(currentIndex, paneCount);
+            }
+        }
+
+        /// <summary>
+        /// Get the filename for an image at the specified index.
+        /// </summary>
+        public string? GetImageFileName(int index)
+        {
+            if (!useLazyLoading)
+            {
+                return index >= 0 && index < imageFileNames.Count ? imageFileNames[index] : null;
+            }
+
+            return imageCache.GetFileName(index);
+        }
+
         /// <summary>
         /// Shuffle the loaded images randomly.
         /// </summary>
         public void Shuffle()
         {
+            if (useLazyLoading)
+            {
+                imageCache.Shuffle(random);
+                LogMessage?.Invoke($"Shuffled {imageCache.TotalImages} images (lazy loading)");
+                return;
+            }
+
             if (images.Count <= 1) return;
 
             // Fisher-Yates shuffle algorithm
@@ -131,38 +200,54 @@ public class ImageManager
                         return;
                     }
 
-                    LogMessage?.Invoke($"Loading {allImageFiles.Count} image files...");
-                    LoadProgressChanged?.Invoke(0, allImageFiles.Count);
-
-                    int loadedCount = 0;
-                    foreach (var file in allImageFiles)
+                    if (useLazyLoading)
                     {
-                        try
-                        {
-                            var bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.UriSource = new Uri(file);
-                            bitmap.EndInit();
-                            bitmap.Freeze();
-
-                            images.Add(bitmap);
-                            imageFileNames.Add(Path.GetFileName(file));
-                            loadedCount++;
-                            LoadProgressChanged?.Invoke(loadedCount, allImageFiles.Count);
-                        }
-                        catch (Exception ex)
-                        {
-                            LogMessage?.Invoke($"Error loading {Path.GetFileName(file)}: {ex.Message}");
-                            loadedCount++;
-                            LoadProgressChanged?.Invoke(loadedCount, allImageFiles.Count);
-                        }
+                        // Lazy loading mode - just initialize cache with file paths
+                        LogMessage?.Invoke($"Initializing lazy loading cache with {allImageFiles.Count} images...");
+                        imageCache.Initialize(allImageFiles);
+                        LoadProgressChanged?.Invoke(allImageFiles.Count, allImageFiles.Count);
+                        
+                        string successMessage = string.IsNullOrWhiteSpace(folderPattern)
+                            ? $"Found {allImageFiles.Count} images for lazy loading"
+                            : $"Found {allImageFiles.Count} images from '{folderPattern}' folders for lazy loading";
+                        LogMessage?.Invoke(successMessage);
                     }
+                    else
+                    {
+                        // Legacy mode - load all images into memory
+                        LogMessage?.Invoke($"Loading {allImageFiles.Count} image files into memory...");
+                        LoadProgressChanged?.Invoke(0, allImageFiles.Count);
 
-                    string successMessage = string.IsNullOrWhiteSpace(folderPattern)
-                        ? $"Successfully loaded {images.Count} images from subdirectories"
-                        : $"Successfully loaded {images.Count} images from '{folderPattern}' folders";
-                    LogMessage?.Invoke(successMessage);
+                        int loadedCount = 0;
+                        foreach (var file in allImageFiles)
+                        {
+                            try
+                            {
+                                var bitmap = new BitmapImage();
+                                bitmap.BeginInit();
+                                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                                bitmap.UriSource = new Uri(file);
+                                bitmap.EndInit();
+                                bitmap.Freeze();
+
+                                images.Add(bitmap);
+                                imageFileNames.Add(Path.GetFileName(file));
+                                loadedCount++;
+                                LoadProgressChanged?.Invoke(loadedCount, allImageFiles.Count);
+                            }
+                            catch (Exception ex)
+                            {
+                                LogMessage?.Invoke($"Error loading {Path.GetFileName(file)}: {ex.Message}");
+                                loadedCount++;
+                                LoadProgressChanged?.Invoke(loadedCount, allImageFiles.Count);
+                            }
+                        }
+
+                        string successMessage = string.IsNullOrWhiteSpace(folderPattern)
+                            ? $"Successfully loaded {images.Count} images from subdirectories"
+                            : $"Successfully loaded {images.Count} images from '{folderPattern}' folders";
+                        LogMessage?.Invoke(successMessage);
+                    }
                 }
                 catch (Exception ex)
                 {
