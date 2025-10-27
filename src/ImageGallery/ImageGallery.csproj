@@ -12,6 +12,16 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    
+    <!-- Version metadata -->
+    <Version>$(VersionPrefix)</Version>
+    <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
+    <FileVersion>$(VersionPrefix)</FileVersion>
+    <InformationalVersion>$(VersionPrefix)</InformationalVersion>
+    <Product>Portable Image Gallery</Product>
+    <Company>okamarcelo</Company>
+    <Copyright>Copyright © 2025</Copyright>
+    <Description>A lightweight, portable image gallery application with slideshow capabilities</Description>
   </PropertyGroup>
 
   <ItemGroup>
