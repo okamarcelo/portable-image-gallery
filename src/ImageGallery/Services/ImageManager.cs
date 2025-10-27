@@ -18,9 +18,15 @@ public class ImageManager
         private readonly List<string> imageFileNames = new List<string>();
         private readonly string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".heic", ".heif", ".webp" };
         private readonly Random random = new Random();
+        private string folderPattern = "_"; // Default pattern
 
         public IReadOnlyList<BitmapImage> Images => images.AsReadOnly();
         public IReadOnlyList<string> ImageFileNames => imageFileNames.AsReadOnly();
+        public string FolderPattern 
+        { 
+            get => folderPattern; 
+            set => folderPattern = string.IsNullOrWhiteSpace(value) ? "_" : value; 
+        }
         
         public event Action<int, int>? LoadProgressChanged; // current, total
         public event Action<int, int, int>? ImportProgressChanged; // current, total, errorCount
@@ -49,7 +55,7 @@ public class ImageManager
         }
 
         /// <summary>
-        /// Load all images from "_" folders found recursively in the application directory.
+        /// Load all images from folders matching the pattern found recursively in the application directory.
         /// </summary>
         public async Task LoadImagesAsync()
         {
@@ -58,7 +64,7 @@ public class ImageManager
         }
 
         /// <summary>
-        /// Load all images from "_" folders found recursively in the specified directory.
+        /// Load all images from folders matching the pattern found recursively in the specified directory.
         /// </summary>
         public async Task LoadImagesFromDirectoryAsync(string rootDirectory)
         {
@@ -70,28 +76,28 @@ public class ImageManager
                     images.Clear();
                     imageFileNames.Clear();
 
-                    LogMessage?.Invoke($"Searching for '_' folders in {rootDirectory}...");
+                    LogMessage?.Invoke($"Searching for '{folderPattern}' folders in {rootDirectory}...");
 
-                    var underscoreFolders = new List<string>();
+                    var matchingFolders = new List<string>();
                     int accessDeniedCount = 0;
-                    FindUnderscoreFoldersRecursive(rootDirectory, underscoreFolders, ref accessDeniedCount);
+                    FindMatchingFoldersRecursive(rootDirectory, matchingFolders, ref accessDeniedCount);
 
                     if (accessDeniedCount > 0)
                     {
                         LogMessage?.Invoke($"Access denied to {accessDeniedCount} folder(s)");
                     }
 
-                    if (underscoreFolders.Count == 0)
+                    if (matchingFolders.Count == 0)
                     {
-                        LogMessage?.Invoke("No '_' folders found");
+                        LogMessage?.Invoke($"No '{folderPattern}' folders found");
                         return;
                     }
 
-                    LogMessage?.Invoke($"Found {underscoreFolders.Count} '_' folder(s)");
+                    LogMessage?.Invoke($"Found {matchingFolders.Count} '{folderPattern}' folder(s)");
 
-                    // Collect all image files from "_" folders
+                    // Collect all image files from matching folders
                     var allImageFiles = new List<string>();
-                    foreach (var folder in underscoreFolders)
+                    foreach (var folder in matchingFolders)
                     {
                         try
                         {
@@ -109,7 +115,7 @@ public class ImageManager
 
                     if (allImageFiles.Count == 0)
                     {
-                        LogMessage?.Invoke("No images found in '_' folders");
+                        LogMessage?.Invoke($"No images found in '{folderPattern}' folders");
                         return;
                     }
 
@@ -141,7 +147,7 @@ public class ImageManager
                         }
                     }
 
-                    LogMessage?.Invoke($"Successfully loaded {images.Count} images from '_' folders");
+                    LogMessage?.Invoke($"Successfully loaded {images.Count} images from '{folderPattern}' folders");
                 }
                 catch (Exception ex)
                 {
@@ -151,7 +157,7 @@ public class ImageManager
         }
 
         /// <summary>
-        /// Import images from all "_" folders found recursively.
+        /// Import images from all folders matching the pattern found recursively.
         /// </summary>
         public async Task<int> ImportImagesAsync()
         {
@@ -162,28 +168,28 @@ public class ImageManager
                 try
                 {
                     string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    LogMessage?.Invoke("Searching for '_' folders...");
+                    LogMessage?.Invoke($"Searching for '{folderPattern}' folders...");
 
-                    var underscoreFolders = new List<string>();
+                    var matchingFolders = new List<string>();
                     int accessDeniedCount = 0;
-                    FindUnderscoreFoldersRecursive(appDirectory, underscoreFolders, ref accessDeniedCount);
+                    FindMatchingFoldersRecursive(appDirectory, matchingFolders, ref accessDeniedCount);
 
                     if (accessDeniedCount > 0)
                     {
                         LogMessage?.Invoke($"Access denied to {accessDeniedCount} folder(s)");
                     }
 
-                    if (underscoreFolders.Count == 0)
+                    if (matchingFolders.Count == 0)
                     {
-                        LogMessage?.Invoke("No '_' folders found");
+                        LogMessage?.Invoke($"No '{folderPattern}' folders found");
                         return;
                     }
 
-                    LogMessage?.Invoke($"Found {underscoreFolders.Count} '_' folders");
+                    LogMessage?.Invoke($"Found {matchingFolders.Count} '{folderPattern}' folders");
 
                     // Collect all image files
                     var allFiles = new List<string>();
-                    foreach (var folder in underscoreFolders)
+                    foreach (var folder in matchingFolders)
                     {
                         try
                         {
@@ -200,7 +206,7 @@ public class ImageManager
 
                     if (allFiles.Count == 0)
                     {
-                        LogMessage?.Invoke("No images found in '_' folders");
+                        LogMessage?.Invoke($"No images found in '{folderPattern}' folders");
                         return;
                     }
 
@@ -291,17 +297,17 @@ public class ImageManager
             }
         }
 
-        private void FindUnderscoreFoldersRecursive(string directory, List<string> results, ref int accessDeniedCount)
+        private void FindMatchingFoldersRecursive(string directory, List<string> results, ref int accessDeniedCount)
         {
             try
             {
                 foreach (var subDir in Directory.GetDirectories(directory))
                 {
-                    if (Path.GetFileName(subDir) == "_")
+                    if (Path.GetFileName(subDir) == folderPattern)
                     {
                         results.Add(subDir);
                     }
-                    FindUnderscoreFoldersRecursive(subDir, results, ref accessDeniedCount);
+                    FindMatchingFoldersRecursive(subDir, results, ref accessDeniedCount);
                 }
             }
             catch (UnauthorizedAccessException)

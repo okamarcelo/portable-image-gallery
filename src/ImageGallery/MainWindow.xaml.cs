@@ -153,7 +153,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                LoadingText.Text = "No images found. Select a root directory to search for '_' folders.";
+                LoadingText.Text = $"No images found. Select a root directory to search for '{imageManager.FolderPattern}' folders.";
                 Log.Warning("No images found in directory");
                 
                 // Automatically show folder selection dialog
@@ -392,11 +392,33 @@ public partial class MainWindow : Window
         {
             try
             {
+                Log.Information("Prompting for folder pattern");
+                
+                // First, ask for the folder pattern
+                var patternDialog = new InputDialog(
+                    "Enter the folder name pattern to search for:",
+                    "Folder Pattern",
+                    imageManager.FolderPattern);
+
+                if (patternDialog.ShowDialog() != true || string.IsNullOrWhiteSpace(patternDialog.ResponseText))
+                {
+                    Log.Information("User cancelled pattern input");
+                    if (imageManager.Images.Count == 0)
+                    {
+                        LoadingText.Text = "No pattern specified. Press I to select a directory.";
+                        LoadingProgressStack.Visibility = Visibility.Collapsed;
+                    }
+                    return;
+                }
+
+                imageManager.FolderPattern = patternDialog.ResponseText;
+                Log.Information($"User set folder pattern to: {imageManager.FolderPattern}");
+                
                 Log.Information("Opening folder selection dialog");
                 
                 var dialog = new System.Windows.Forms.FolderBrowserDialog
                 {
-                    Description = "Select root directory to search for '_' folders",
+                    Description = $"Select root directory to search for '{imageManager.FolderPattern}' folders",
                     ShowNewFolderButton = false,
                     UseDescriptionForTitle = true
                 };
@@ -407,7 +429,7 @@ public partial class MainWindow : Window
                     Log.Information($"User selected directory: {selectedPath}");
                     
                     LoadingOverlay.Visibility = Visibility.Visible;
-                    LoadingText.Text = "Searching for images in '_' folders...";
+                    LoadingText.Text = $"Searching for images in '{imageManager.FolderPattern}' folders...";
                     LoadingProgressStack.Visibility = Visibility.Visible;
 
                     await imageManager.LoadImagesFromDirectoryAsync(selectedPath);
@@ -422,7 +444,7 @@ public partial class MainWindow : Window
                     }
                     else
                     {
-                        LoadingText.Text = "No images found in '_' folders. Press I to try another directory.";
+                        LoadingText.Text = $"No images found in '{imageManager.FolderPattern}' folders. Press I to try another directory.";
                         LoadingProgressStack.Visibility = Visibility.Collapsed;
                         Log.Warning("No images found in selected directory");
                     }
