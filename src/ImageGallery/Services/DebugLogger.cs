@@ -3,6 +3,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using ImageGallery.Resources;
 
 namespace ImageGallery.Services;
 
@@ -26,7 +27,7 @@ public class DebugLogger
 
         public void Log(string message)
         {
-            string timestampedMessage = $"[{DateTime.Now:HH:mm:ss}] {message}";
+            string timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
             logBuilder.AppendLine(timestampedMessage);
             
             if (logTextBlock != null)
@@ -57,7 +58,7 @@ public class DebugLogger
                 consoleContainer.Visibility = IsVisible ? Visibility.Visible : Visibility.Collapsed;
             }
 
-            Log(IsVisible ? "Debug console shown" : "Debug console hidden");
+            Log(IsVisible ? Strings.Status_DebugConsoleShown : Strings.Status_DebugConsoleHidden);
         }
 
         private void AutoScrollToBottom()

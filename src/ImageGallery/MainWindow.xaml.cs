@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageGallery.Services;
 using Serilog;
+using ImageGallery.Resources;
 
 namespace ImageGallery;
 
@@ -39,14 +40,14 @@ public partial class MainWindow : Window
     {
         try
         {
-            Log.Information("MainWindow initializing");
+            Log.Information(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
 
             // Store CLI arguments
             cliArgs = commandLineArgs;
 
             // Initialize services
-            Log.Debug("Creating service instances");
+            Log.Debug(Strings.SLog_CreatingServiceInstances);
             imageManager = new ImageManager();
             zoomController = new ZoomController();
             mosaicManager = new MosaicManager();
@@ -56,18 +57,19 @@ public partial class MainWindow : Window
             indicatorManager = new IndicatorManager();
 
             // Wire up event handlers
-            Log.Debug("Setting up event handlers");
+            Log.Debug(Strings.SLog_SettingUpEventHandlers);
             SetupEventHandlers();
             
             // Setup window size change handler for orientation-aware layout
             this.SizeChanged += MainWindow_SizeChanged;
             
-            Log.Information("MainWindow initialized successfully");
+            Log.Information(Strings.SLog_MainWindowInitializedSuccessfully);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Failed to initialize MainWindow");
-            MessageBox.Show($"Failed to initialize application:\n{ex.Message}", "Initialization Error", 
+            Log.Fatal(ex, Strings.SLog_FailedToInitializeMainWindow);
+            MessageBox.Show(string.Format(Strings.Error_InitializationMessage, ex.Message), 
+                Strings.Error_InitializationTitle, 
                 MessageBoxButton.OK, MessageBoxImage.Error);
             throw;
         }
@@ -80,7 +82,7 @@ public partial class MainWindow : Window
                 {
                     LoadingProgressBar.Value = current;
                     LoadingProgressBar.Maximum = total;
-                    LoadingDetailsText.Text = $"{current} / {total}";
+                    LoadingDetailsText.Text = string.Format(Strings.Progress_CurrentTotal, current, total);
                 });
             };
 
@@ -90,7 +92,8 @@ public partial class MainWindow : Window
                 {
                     ImportProgressBar.Value = current;
                     ImportProgressBar.Maximum = total;
-                    ImportDetailsText.Text = $"{current} / {total}" + (errors > 0 ? $" ({errors} errors)" : "");
+                    ImportDetailsText.Text = string.Format(Strings.Progress_CurrentTotal, current, total) + 
+                        (errors > 0 ? string.Format(Strings.Progress_CurrentTotalErrors, current, total, errors) : "");
                 });
             };
 
@@ -128,7 +131,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            Log.Information("Window loaded, initializing UI components");
+            Log.Information(Strings.SLog_WindowLoaded);
             
             // Initialize UI references
             debugLogger.Initialize(DebugConsole, LogTextBlock);
@@ -136,8 +139,8 @@ public partial class MainWindow : Window
             indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
             zoomController.Initialize(MosaicScaleTransform, MosaicTranslateTransform);
 
-            debugLogger.Log("Application started");
-            Log.Debug("UI components initialized");
+            debugLogger.Log(Strings.Status_ApplicationStarted);
+            Log.Debug(Strings.SLog_UIComponentsInitialized);
 
             // Handle CLI arguments if provided
             if (cliArgs != null && cliArgs.IsCliMode)
@@ -150,9 +153,9 @@ public partial class MainWindow : Window
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
 
-            Log.Information("Starting image loading");
+            Log.Information(Strings.SLog_StartingImageLoading);
             await imageManager.LoadImagesAsync();
-            Log.Information($"Image loading completed. Found {imageManager.Images.Count} images");
+            Log.Information(string.Format(Strings.SLog_ImageLoadingCompleted, imageManager.Images.Count));
 
             if (imageManager.Images.Count > 0)
             {
@@ -161,15 +164,15 @@ public partial class MainWindow : Window
                 ShowImage(0);
                 slideshowController.Start();
                 LoadingOverlay.Visibility = Visibility.Collapsed;
-                Log.Information("Slideshow started");
+                Log.Information(Strings.SLog_SlideshowStarted);
             }
             else
             {
                 string patternText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
-                    ? "all subdirectories"
-                    : $"'{imageManager.FolderPattern}' folders";
-                LoadingText.Text = $"No images found. Select a root directory to search {patternText}.";
-                Log.Warning("No images found in directory");
+                    ? Strings.Pattern_AllSubdirectories
+                    : string.Format(Strings.Pattern_SpecificFolders, imageManager.FolderPattern);
+                LoadingText.Text = string.Format(Strings.Error_NoImages, patternText);
+                Log.Warning(Strings.SLog_NoImagesFoundInDirectory);
                 
                 // Automatically show folder selection dialog
                 LoadingProgressStack.Visibility = Visibility.Collapsed;
@@ -178,8 +181,9 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error during window load");
-            MessageBox.Show($"Error loading application:\n{ex.Message}", "Load Error", 
+            Log.Error(ex, Strings.SLog_ErrorDuringWindowLoad);
+            MessageBox.Show(string.Format(Strings.Error_LoadMessage, ex.Message), 
+                Strings.Error_LoadTitle, 
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -191,7 +195,7 @@ public partial class MainWindow : Window
             if (cliArgs == null || !cliArgs.IsCliMode)
                 return;
 
-            Log.Information("Loading from CLI arguments");
+            Log.Information(Strings.SLog_LoadingFromCLI);
 
             // Set folder pattern (empty string means all subdirectories)
             imageManager.FolderPattern = cliArgs.FolderPattern ?? "";
@@ -227,7 +231,7 @@ public partial class MainWindow : Window
                         mosaicManager.DecreasePanes();
                 }
 
-                Log.Information($"Set pane count to {mosaicManager.PaneCount}");
+                Log.Information(string.Format(Strings.SLog_SetPaneCount, mosaicManager.PaneCount));
             }
 
             // Set fullscreen mode if specified
@@ -235,7 +239,7 @@ public partial class MainWindow : Window
             {
                 // Note: We need to set fullscreen after the window is fully loaded
                 // So we'll do it after loading images
-                Log.Information("CLI: Fullscreen mode will be activated");
+                Log.Information(Strings.SLog_FullscreenModeWillBeActivated);
             }
 
             // Load images from specified directory
@@ -243,9 +247,9 @@ public partial class MainWindow : Window
             LoadingProgressStack.Visibility = Visibility.Visible;
             
             string patternText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
-                ? "all subdirectories"
-                : $"'{imageManager.FolderPattern}' folders";
-            LoadingText.Text = $"Loading images from {patternText}...";
+                ? Strings.Pattern_AllSubdirectories
+                : string.Format(Strings.Pattern_SpecificFolders, imageManager.FolderPattern);
+            LoadingText.Text = string.Format(Strings.Loading_ImagesFrom, patternText);
 
             await imageManager.LoadImagesFromDirectoryAsync(cliArgs.RootDirectory!);
             
@@ -260,23 +264,24 @@ public partial class MainWindow : Window
                 if (cliArgs.Fullscreen)
                 {
                     ToggleFullscreen();
-                    Log.Information("CLI: Activated fullscreen mode");
+                    Log.Information(Strings.SLog_ActivatedFullscreenMode);
                 }
                 
-                Log.Information($"CLI mode: Loaded {imageManager.Images.Count} images, started slideshow");
+                Log.Information(string.Format(Strings.SLog_CLIModeLoadedImages, imageManager.Images.Count));
             }
             else
             {
-                LoadingText.Text = $"No images found in {patternText}. Press I to select a directory.";
+                LoadingText.Text = string.Format(Strings.Error_NoImagesInPattern, patternText);
                 LoadingProgressStack.Visibility = Visibility.Collapsed;
-                Log.Warning("CLI mode: No images found");
+                Log.Warning(Strings.SLog_CLIModeNoImages);
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error loading from CLI arguments");
+            Log.Error(ex, Strings.SLog_ErrorLoadingFromCLI);
             LoadingOverlay.Visibility = Visibility.Collapsed;
-            MessageBox.Show($"Error loading images:\n{ex.Message}", "Load Error", 
+            MessageBox.Show(string.Format(Strings.Error_LoadImagesMessage, ex.Message), 
+                Strings.Error_LoadTitle, 
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }        

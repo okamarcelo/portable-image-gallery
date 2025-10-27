@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Controls.Primitives;
+using ImageGallery.Resources;
 
 namespace ImageGallery.Services;
 
@@ -25,7 +26,8 @@ public class MosaicManager
             mosaicPaneCount = mosaicSizes[nextIndex];
             
             PaneCountChanged?.Invoke(mosaicPaneCount);
-            LogMessage?.Invoke($"Mosaic mode: {mosaicPaneCount} pane{(mosaicPaneCount > 1 ? "s" : "")}");
+            string plural = mosaicPaneCount > 1 ? "s" : "";
+            LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, mosaicPaneCount, plural));
         }
 
         public void DecreasePanes()
@@ -35,7 +37,8 @@ public class MosaicManager
             mosaicPaneCount = mosaicSizes[prevIndex];
             
             PaneCountChanged?.Invoke(mosaicPaneCount);
-            LogMessage?.Invoke($"Mosaic mode: {mosaicPaneCount} pane{(mosaicPaneCount > 1 ? "s" : "")}");
+            string plural = mosaicPaneCount > 1 ? "s" : "";
+            LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, mosaicPaneCount, plural));
         }
 
         public void UpdateGridLayout(UniformGrid grid, double windowWidth, double windowHeight)

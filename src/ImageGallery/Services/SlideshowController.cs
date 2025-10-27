@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Threading;
+using ImageGallery.Resources;
 
 namespace ImageGallery.Services;
 
@@ -31,7 +32,7 @@ public class SlideshowController
             if (!timer.IsEnabled)
             {
                 timer.Start();
-                LogMessage?.Invoke("Slideshow started");
+                LogMessage?.Invoke(Strings.Status_SlideshowStarted);
             }
         }
 
@@ -40,7 +41,7 @@ public class SlideshowController
             if (timer.IsEnabled)
             {
                 timer.Stop();
-                LogMessage?.Invoke("Slideshow stopped");
+                LogMessage?.Invoke(Strings.Status_SlideshowStopped);
             }
         }
 
@@ -55,7 +56,7 @@ public class SlideshowController
             intervalSeconds += 0.5;
             UpdateInterval();
             IntervalChanged?.Invoke(intervalSeconds);
-            LogMessage?.Invoke($"Slideshow speed: {intervalSeconds:0.0}s");
+            LogMessage?.Invoke(string.Format(Strings.Log_SlideshowSpeed, intervalSeconds));
         }
 
         public void DecreaseSpeed()
@@ -65,7 +66,7 @@ public class SlideshowController
                 intervalSeconds -= 0.5;
                 UpdateInterval();
                 IntervalChanged?.Invoke(intervalSeconds);
-                LogMessage?.Invoke($"Slideshow speed: {intervalSeconds:0.0}s");
+                LogMessage?.Invoke(string.Format(Strings.Log_SlideshowSpeed, intervalSeconds));
             }
         }
 

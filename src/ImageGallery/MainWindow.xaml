@@ -1,7 +1,8 @@
 <Window x:Class="ImageGallery.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Image Gallery" 
+        xmlns:resx="clr-namespace:ImageGallery.Resources"
+        Title="{x:Static resx:Strings.MainWindow_Title}" 
         Height="600" 
         Width="800"
         WindowStyle="None"
@@ -55,7 +56,7 @@
                 Visibility="Visible">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <TextBlock x:Name="LoadingText" 
-                          Text="Loading images..." 
+                          Text="{x:Static resx:Strings.Loading_Images}" 
                           Foreground="White" 
                           FontSize="20" 
                           HorizontalAlignment="Center"
@@ -63,7 +64,7 @@
                 
                 <!-- Import Progress -->
                 <StackPanel x:Name="ImportProgressStack" Visibility="Collapsed" Margin="0,0,0,15">
-                    <TextBlock Text="Importing files..." 
+                    <TextBlock Text="{x:Static resx:Strings.Importing_Files}" 
                               Foreground="#CCCCCC" 
                               FontSize="14" 
                               HorizontalAlignment="Center"
@@ -84,7 +85,7 @@
                 
                 <!-- Loading Progress -->
                 <StackPanel x:Name="LoadingProgressStack" Visibility="Visible">
-                    <TextBlock Text="Loading images..." 
+                    <TextBlock Text="{x:Static resx:Strings.Loading_Images}" 
                               Foreground="#CCCCCC" 
                               FontSize="14" 
                               HorizontalAlignment="Center"

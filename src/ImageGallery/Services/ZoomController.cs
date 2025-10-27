@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using ImageGallery.Resources;
 
 namespace ImageGallery.Services;
 
@@ -120,7 +121,7 @@ public class ZoomController
             }
             
             ZoomChanged?.Invoke(zoomLevel);
-            LogMessage?.Invoke($"Zoom: {ZoomPercent}%");
+            LogMessage?.Invoke(string.Format(Strings.Log_Zoom, ZoomPercent));
         }
 
         private void ApplyPan()

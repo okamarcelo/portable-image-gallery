@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using ImageGallery.Services;
 using Serilog;
+using ImageGallery.Resources;
 
 namespace ImageGallery;
 
@@ -22,7 +23,7 @@ public partial class App : Application
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
 
-            Log.Information("Application starting with file logging enabled");
+            Log.Information(Strings.SLog_ApplicationStarting);
         }
         else
         {
@@ -34,13 +35,13 @@ public partial class App : Application
         // Log unhandled exceptions
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
         {
-            Log.Fatal(args.ExceptionObject as Exception, "Unhandled exception occurred");
+            Log.Fatal(args.ExceptionObject as Exception, Strings.SLog_UnhandledException);
             Log.CloseAndFlush();
         };
 
         DispatcherUnhandledException += (sender, args) =>
         {
-            Log.Fatal(args.Exception, "Unhandled dispatcher exception");
+            Log.Fatal(args.Exception, Strings.SLog_UnhandledDispatcherException);
             args.Handled = false; // Let it crash so user can see the error
         };
 
@@ -74,12 +75,12 @@ public partial class App : Application
                         if (value != null)
                         {
                             cliArgs.RootDirectory = value;
-                            Log.Information($"CLI: Root directory = {cliArgs.RootDirectory}");
+                            Log.Information(Strings.SLog_RootDirectory, cliArgs.RootDirectory);
                             i++; // Skip the next argument since we consumed it
                         }
                         else
                         {
-                            Log.Warning($"CLI: {arg} requires a value");
+                            Log.Warning(Strings.SLog_ArgumentRequiresValue, arg);
                         }
                         break;
                         
@@ -96,7 +97,7 @@ public partial class App : Application
                         {
                             cliArgs.FolderPattern = ""; // Empty pattern
                         }
-                        Log.Information($"CLI: Folder pattern = '{cliArgs.FolderPattern}' (empty = all subdirectories)");
+                        Log.Information(Strings.SLog_FolderPattern, cliArgs.FolderPattern);
                         break;
                         
                     case "-m":
@@ -105,12 +106,12 @@ public partial class App : Application
                         if (value != null && int.TryParse(value, out int panes) && panes > 0)
                         {
                             cliArgs.PaneCount = panes;
-                            Log.Information($"CLI: Pane count = {cliArgs.PaneCount}");
+                            Log.Information(Strings.SLog_PaneCount, cliArgs.PaneCount);
                             i++; // Skip the next argument since we consumed it
                         }
                         else
                         {
-                            Log.Warning($"CLI: {arg} requires a positive integer value");
+                            Log.Warning(Strings.SLog_ArgumentRequiresPositiveInteger, arg);
                         }
                         break;
                         
@@ -118,11 +119,11 @@ public partial class App : Application
                     case "--fullscreen":
                         hasPatternOrMosaic = true;
                         cliArgs.Fullscreen = true;
-                        Log.Information("CLI: Fullscreen mode enabled");
+                        Log.Information(Strings.SLog_FullscreenEnabled);
                         break;
                         
                     default:
-                        Log.Warning($"CLI: Unknown argument '{arg}'");
+                        Log.Warning(Strings.SLog_UnknownArgument, arg);
                         break;
                 }
             }
@@ -132,7 +133,7 @@ public partial class App : Application
         if (string.IsNullOrWhiteSpace(cliArgs.RootDirectory) && hasPatternOrMosaic)
         {
             cliArgs.RootDirectory = Environment.CurrentDirectory;
-            Log.Information($"CLI: Root directory not specified, using current directory: {cliArgs.RootDirectory}");
+            Log.Information(Strings.SLog_RootDirectoryNotSpecified, cliArgs.RootDirectory);
         }
 
         return cliArgs;
@@ -140,7 +141,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Log.Information("Application exiting");
+        Log.Information(Strings.SLog_ApplicationExiting);
         Log.CloseAndFlush();
         base.OnExit(e);
     }

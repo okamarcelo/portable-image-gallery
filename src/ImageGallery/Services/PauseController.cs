@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using ImageGallery.Resources;
 
 namespace ImageGallery.Services;
 
@@ -49,13 +50,13 @@ public class PauseController
             {
                 ShowPauseIcon();
                 Paused?.Invoke();
-                LogMessage?.Invoke("Paused");
+                LogMessage?.Invoke(Strings.Status_Paused);
             }
             else
             {
                 ShowPlayIcon();
                 Resumed?.Invoke();
-                LogMessage?.Invoke("Resumed");
+                LogMessage?.Invoke(Strings.Status_Resumed);
             }
         }
 
