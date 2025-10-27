@@ -38,15 +38,27 @@ public class MosaicManager
             LogMessage?.Invoke($"Mosaic mode: {mosaicPaneCount} pane{(mosaicPaneCount > 1 ? "s" : "")}");
         }
 
-        public void UpdateGridLayout(UniformGrid grid)
+        public void UpdateGridLayout(UniformGrid grid, double windowWidth, double windowHeight)
         {
             if (grid == null) return;
 
-            // Handle special case for 2 panes (1x2 layout)
+            // Handle special case for 2 panes - layout based on orientation
             if (mosaicPaneCount == 2)
             {
-                grid.Rows = 1;
-                grid.Columns = 2;
+                bool isLandscape = windowWidth >= windowHeight;
+                
+                if (isLandscape)
+                {
+                    // Landscape: side by side (1 row, 2 columns)
+                    grid.Rows = 1;
+                    grid.Columns = 2;
+                }
+                else
+                {
+                    // Portrait: one under another (2 rows, 1 column)
+                    grid.Rows = 2;
+                    grid.Columns = 1;
+                }
             }
             else
             {

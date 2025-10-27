@@ -54,6 +54,9 @@ public partial class MainWindow : Window
             // Setup mouse handler for window dragging
             this.MouseLeftButtonDown += MainWindow_MouseLeftButtonDown;
             
+            // Setup window size change handler for orientation-aware layout
+            this.SizeChanged += MainWindow_SizeChanged;
+            
             Log.Information("MainWindow initialized successfully");
         }
         catch (Exception ex)
@@ -180,6 +183,15 @@ public partial class MainWindow : Window
             }
         }
 
+        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Update mosaic layout when window size changes (for orientation-aware 2-pane layout)
+            if (mosaicManager.PaneCount == 2 && imageManager.Images.Count > 0)
+            {
+                UpdateMosaicLayout();
+            }
+        }
+
         private void OnSlideshowTick()
         {
             currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.Images.Count;
@@ -201,17 +213,22 @@ public partial class MainWindow : Window
 
                 MosaicDisplay.ItemsSource = imagesToShow;
 
-                // Update the grid layout
-                var itemsPanel = FindVisualChild<UniformGrid>(MosaicDisplay);
-                if (itemsPanel != null)
-                {
-                    mosaicManager.UpdateGridLayout(itemsPanel);
-                }
+                // Update the grid layout with window dimensions for orientation detection
+                UpdateMosaicLayout();
 
                 string logMsg = $"Showing: {imageManager.ImageFileNames[index]}";
                 if (mosaicManager.PaneCount > 1)
                     logMsg += $" (+{mosaicManager.PaneCount - 1} more)";
                 debugLogger.Log(logMsg);
+            }
+        }
+
+        private void UpdateMosaicLayout()
+        {
+            var itemsPanel = FindVisualChild<UniformGrid>(MosaicDisplay);
+            if (itemsPanel != null)
+            {
+                mosaicManager.UpdateGridLayout(itemsPanel, ActualWidth, ActualHeight);
             }
         }
 
