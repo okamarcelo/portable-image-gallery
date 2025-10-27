@@ -61,22 +61,22 @@
   
   <!-- Window Titles -->
   <data name="MainWindow_Title" xml:space="preserve">
-    <value>Image Gallery</value>
+    <value>Galeria de Imagens</value>
   </data>
   <data name="InputDialog_Title" xml:space="preserve">
-    <value>Folder Pattern</value>
+    <value>Padrao de Pasta</value>
   </data>
   
   <!-- Loading Messages -->
   <data name="Loading_Images" xml:space="preserve">
-    <value>Loading images...</value>
+    <value>Carregando imagens...</value>
   </data>
   <data name="Loading_ImagesFrom" xml:space="preserve">
-    <value>Loading images from {0}...</value>
+    <value>Carregando imagens de {0}...</value>
     <comment>{0} is the pattern text</comment>
   </data>
   <data name="Importing_Files" xml:space="preserve">
-    <value>Importing files...</value>
+    <value>Importando arquivos...</value>
   </data>
   
   <!-- Progress Messages -->
@@ -85,82 +85,82 @@
     <comment>{0} is current, {1} is total</comment>
   </data>
   <data name="Progress_CurrentTotalErrors" xml:space="preserve">
-    <value>{0} / {1} ({2} errors)</value>
+    <value>{0} / {1} ({2} erros)</value>
     <comment>{0} is current, {1} is total, {2} is error count</comment>
   </data>
   
   <!-- Error Messages -->
   <data name="Error_NoImages" xml:space="preserve">
-    <value>No images found. Select a root directory to search {0}.</value>
+    <value>Nenhuma imagem encontrada. Selecione um diretorio raiz para pesquisar {0}.{0}.</value>
     <comment>{0} is the pattern description</comment>
   </data>
   <data name="Error_NoImagesInPattern" xml:space="preserve">
-    <value>No images found in {0}. Press I to select a directory.</value>
+    <value>Nenhuma imagem encontrada em {0}. Pressione I para selecionar um diretorio.</value>
     <comment>{0} is the pattern text</comment>
   </data>
   <data name="Error_InitializationTitle" xml:space="preserve">
-    <value>Initialization Error</value>
+    <value>Erro de Inicializacao</value>
   </data>
   <data name="Error_InitializationMessage" xml:space="preserve">
-    <value>Failed to initialize application:\n{0}</value>
+    <value>Falha ao inicializar aplicacao:\n{0}\n{0}</value>
     <comment>{0} is the error message</comment>
   </data>
   <data name="Error_LoadTitle" xml:space="preserve">
-    <value>Load Error</value>
+    <value>Erro de Carregamento</value>
   </data>
   <data name="Error_LoadMessage" xml:space="preserve">
-    <value>Error loading application:\n{0}</value>
+    <value>Erro ao carregar aplicacao:\n{0}\n{0}</value>
     <comment>{0} is the error message</comment>
   </data>
   <data name="Error_LoadImagesMessage" xml:space="preserve">
-    <value>Error loading images:\n{0}</value>
+    <value>Erro ao carregar imagens:\n{0}\n{0}</value>
     <comment>{0} is the error message</comment>
   </data>
   
   <!-- Pattern Messages -->
   <data name="Pattern_AllSubdirectories" xml:space="preserve">
-    <value>all subdirectories</value>
+    <value>todos os subdiretorios</value>
   </data>
   <data name="Pattern_SpecificFolders" xml:space="preserve">
-    <value>'{0}' folders</value>
+    <value>'{0}pastas '{0}'</value>
     <comment>{0} is the folder pattern</comment>
   </data>
   
   <!-- Input Dialog -->
   <data name="InputDialog_Prompt" xml:space="preserve">
-    <value>Enter folder name pattern to search for:</value>
+    <value>Digite o padrao do nome da pasta para pesquisar:</value>
   </data>
   <data name="InputDialog_Help" xml:space="preserve">
-    <value>(e.g., 'images' or 'photos'; leave empty for all subdirectories)</value>
+    <value>(e.g., 'images' or 'photos'; leave empty for todos os subdiretorios)</value>
   </data>
   <data name="Button_OK" xml:space="preserve">
     <value>OK</value>
   </data>
-  <data name="Button_Cancel" xml:space="preserve">
-    <value>Cancel</value>
+  <data name="Button_Cancelar" xml:space="preserve">
+    <value>Cancelar</value>
   </data>
   
   <!-- Status/Log Messages -->
-  <data name="Status_Paused" xml:space="preserve">
-    <value>Paused</value>
+  <data name="Status_Pausado" xml:space="preserve">
+    <value>Pausado</value>
   </data>
-  <data name="Status_Resumed" xml:space="preserve">
-    <value>Resumed</value>
+  <data name="Status_Retomado" xml:space="preserve">
+    <value>Retomado</value>
   </data>
   <data name="Status_SlideshowStarted" xml:space="preserve">
-    <value>Slideshow started</value>
+    <value>Apresentacao iniciada</value>
   </data>
   <data name="Status_SlideshowStopped" xml:space="preserve">
-    <value>Slideshow stopped</value>
+    <value>Apresentacao parada</value>
   </data>
   <data name="Status_ApplicationStarted" xml:space="preserve">
-    <value>Application started</value>
+    <value>Aplicacao iniciada</value>
   </data>
   <data name="Status_DebugConsoleShown" xml:space="preserve">
-    <value>Debug console shown</value>
+    <value>Console de depuracao exibido</value>
   </data>
   <data name="Status_DebugConsoleHidden" xml:space="preserve">
-    <value>Debug console hidden</value>
+    <value>Console de depuracao ocultado</value>
   </data>
   
   <!-- Log Messages with format -->
@@ -169,12 +169,12 @@
     <comment>{0} is zoom percentage</comment>
   </data>
   <data name="Log_SlideshowSpeed" xml:space="preserve">
-    <value>Slideshow speed: {0:0.0}s</value>
+    <value>Velocidade da apresentacao: {0:0.0}s</value>
     <comment>{0} is interval in seconds</comment>
   </data>
   <data name="Log_MosaicMode" xml:space="preserve">
-    <value>Mosaic mode: {0} pane{1}</value>
-    <comment>{0} is pane count, {1} is plural 's' or empty string</comment>
+    <value>Modo mosaico: {0} painel{1}</value>
+    <comment>{0} is painel count, {1} is plural 's' or empty string</comment>
   </data>
   <data name="Log_Timestamp" xml:space="preserve">
     <value>[{0:HH:mm:ss}] {1}</value>
@@ -211,7 +211,7 @@
     <comment>{0} is image count</comment>
   </data>
   <data name="SLog_SlideshowStarted" xml:space="preserve">
-    <value>Slideshow started</value>
+    <value>Apresentacao iniciada</value>
   </data>
   <data name="SLog_NoImagesFoundInDirectory" xml:space="preserve">
     <value>No images found in directory</value>
@@ -223,8 +223,8 @@
     <value>Loading from CLI arguments</value>
   </data>
   <data name="SLog_SetPaneCount" xml:space="preserve">
-    <value>Set pane count to {0}</value>
-    <comment>{0} is pane count</comment>
+    <value>Set painel count to {0}</value>
+    <comment>{0} is painel count</comment>
   </data>
   <data name="SLog_FullscreenModeWillBeActivated" xml:space="preserve">
     <value>CLI: Fullscreen mode will be activated</value>
@@ -251,12 +251,12 @@
     <comment>{0} is directory path</comment>
   </data>
   <data name="SLog_FolderPattern" xml:space="preserve">
-    <value>CLI: Folder pattern = '{0}' (empty = all subdirectories)</value>
+    <value>CLI: Folder pattern = '{0}' (empty = todos os subdiretorios)</value>
     <comment>{0} is folder pattern</comment>
   </data>
   <data name="SLog_PaneCount" xml:space="preserve">
-    <value>CLI: Pane count = {0}</value>
-    <comment>{0} is pane count</comment>
+    <value>CLI: painel count = {0}</value>
+    <comment>{0} is painel count</comment>
   </data>
   <data name="SLog_FullscreenEnabled" xml:space="preserve">
     <value>CLI: Fullscreen mode enabled</value>
@@ -283,118 +283,118 @@
     <value>Unhandled dispatcher exception</value>
   </data>
   <data name="SLog_ApplicationExiting" xml:space="preserve">
-    <value>Application exiting</value>
+    <value>Aplicacao encerrando</value>
   </data>
   
   <!-- Keyboard Shortcuts -->
   <data name="Shortcuts_Title" xml:space="preserve">
-    <value>KEYBOARD SHORTCUTS</value>
+    <value>ATALHOS DO TECLADO</value>
   </data>
   <data name="Shortcuts_ArrowKeys" xml:space="preserve">
-    <value>Arrow Keys:</value>
+    <value>Setas:</value>
   </data>
   <data name="Shortcuts_ArrowKeys_Desc" xml:space="preserve">
-    <value>Navigate images</value>
+    <value>Navegar imagens</value>
   </data>
   <data name="Shortcuts_SpaceEnter" xml:space="preserve">
-    <value>Space / Enter:</value>
+    <value>Espaco / Enter:</value>
   </data>
   <data name="Shortcuts_SpaceEnter_Desc" xml:space="preserve">
-    <value>Pause/Resume slideshow</value>
+    <value>Pausar/Retomar apresentacao</value>
   </data>
   <data name="Shortcuts_F" xml:space="preserve">
     <value>F:</value>
   </data>
   <data name="Shortcuts_F_Desc" xml:space="preserve">
-    <value>Toggle fullscreen</value>
+    <value>Alternar tela cheia</value>
   </data>
   <data name="Shortcuts_D" xml:space="preserve">
     <value>D:</value>
   </data>
   <data name="Shortcuts_D_Desc" xml:space="preserve">
-    <value>Toggle debug console</value>
+    <value>Alternar console de depuracao</value>
   </data>
   <data name="Shortcuts_ShiftLess" xml:space="preserve">
     <value>Shift + &lt;:</value>
   </data>
   <data name="Shortcuts_ShiftLess_Desc" xml:space="preserve">
-    <value>Increase speed (+0.5s)</value>
+    <value>Aumentar velocidade (+0.5s)</value>
   </data>
   <data name="Shortcuts_ShiftGreater" xml:space="preserve">
     <value>Shift + &gt;:</value>
   </data>
   <data name="Shortcuts_ShiftGreater_Desc" xml:space="preserve">
-    <value>Decrease speed (-0.5s)</value>
+    <value>Diminuir velocidade (-0.5s)</value>
   </data>
   <data name="Shortcuts_PlusMinus" xml:space="preserve">
     <value>+ / -:</value>
   </data>
   <data name="Shortcuts_PlusMinus_Desc" xml:space="preserve">
-    <value>Zoom in/out</value>
+    <value>Ampliar/Reduzir zoom</value>
   </data>
   <data name="Shortcuts_M" xml:space="preserve">
     <value>M:</value>
   </data>
   <data name="Shortcuts_M_Desc" xml:space="preserve">
-    <value>Increase mosaic panes</value>
+    <value>Aumentar paineis do mosaico</value>
   </data>
   <data name="Shortcuts_N" xml:space="preserve">
     <value>N:</value>
   </data>
   <data name="Shortcuts_N_Desc" xml:space="preserve">
-    <value>Decrease mosaic panes</value>
+    <value>Diminuir paineis do mosaico</value>
   </data>
   <data name="Shortcuts_I" xml:space="preserve">
     <value>I:</value>
   </data>
   <data name="Shortcuts_I_Desc" xml:space="preserve">
-    <value>Select root directory</value>
+    <value>Selecionar diretorio raiz</value>
   </data>
   <data name="Shortcuts_CtrlW" xml:space="preserve">
     <value>Ctrl+W:</value>
   </data>
   <data name="Shortcuts_CtrlW_Desc" xml:space="preserve">
-    <value>Close app</value>
+    <value>Fechar aplicacao</value>
   </data>
   <data name="Shortcuts_CtrlQ" xml:space="preserve">
     <value>Ctrl+Q:</value>
   </data>
   <data name="Shortcuts_CtrlQ_Desc" xml:space="preserve">
-    <value>Close and delete all images</value>
+    <value>Fechar e excluir todas as imagens</value>
   </data>
   
   <!-- Command-line Help -->
   <data name="CLI_Help_Usage" xml:space="preserve">
-    <value>Usage: ImageGallery [options]</value>
+    <value>Uso: ImageGallery [opcoes]</value>
   </data>
   <data name="CLI_Help_Options" xml:space="preserve">
-    <value>Options:</value>
+    <value>Opcoes:</value>
   </data>
   <data name="CLI_Help_Dir" xml:space="preserve">
-    <value>  -d, --dir &lt;path&gt;        Root directory to search for images</value>
+    <value>  -d, --dir &lt;caminho&gt;     Diretorio raiz para pesquisar imagens</value>
   </data>
   <data name="CLI_Help_Pattern" xml:space="preserve">
-    <value>  -p, --pattern &lt;name&gt;    Folder name pattern to search (empty = all subdirectories)</value>
+    <value>  -p, --pattern &lt;nome&gt;    Padrao de nome de pasta (vazio = todos subdiretorios)</value>
   </data>
   <data name="CLI_Help_Mosaic" xml:space="preserve">
-    <value>  -m, --mosaic &lt;count&gt;    Number of mosaic panes (1-9)</value>
+    <value>  -m, --mosaic &lt;numero&gt;   Numero de paineis do mosaico (1-9)</value>
   </data>
   <data name="CLI_Help_Fullscreen" xml:space="preserve">
-    <value>  -f, --fullscreen        Start in fullscreen mode</value>
+    <value>  -f, --fullscreen        Iniciar em modo tela cheia</value>
   </data>
   <data name="CLI_Help_Help" xml:space="preserve">
-    <value>  -h, --help              Show this help message</value>
+    <value>  -h, --help              Exibir esta mensagem de ajuda</value>
   </data>
   <data name="CLI_Help_Examples" xml:space="preserve">
-    <value>Examples:</value>
+    <value>Exemplos:</value>
   </data>
   <data name="CLI_Help_Example1" xml:space="preserve">
-    <value>  ImageGallery -d C:\Photos -p vacation -f</value>
+    <value>  ImageGallery -d C:\Fotos -p ferias -f</value>
   </data>
   <data name="CLI_Help_Example2" xml:space="preserve">
     <value>  ImageGallery -m 4</value>
   </data>
   <data name="CLI_Help_KeyboardShortcuts" xml:space="preserve">
-    <value>Keyboard Shortcuts:</value>
+    <value>Atalhos do Teclado:</value>
   </data>
 </root>

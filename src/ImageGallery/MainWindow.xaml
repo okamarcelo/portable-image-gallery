@@ -111,41 +111,59 @@
                         Margin="0,30,0,0"
                         Background="#22FFFFFF">
                     <StackPanel>
-                        <TextBlock Text="KEYBOARD SHORTCUTS" 
+                        <TextBlock Text="{x:Static resx:Strings.Shortcuts_Title}" 
                                   Foreground="White" 
                                   FontSize="14" 
                                   FontWeight="Bold"
                                   HorizontalAlignment="Center"
                                   Margin="0,0,0,10"/>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="Arrow Keys:" FontWeight="Bold"/> Navigate images
+                            <Run Text="{x:Static resx:Strings.Shortcuts_ArrowKeys}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_ArrowKeys_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="Space / Enter:" FontWeight="Bold"/> Pause/Resume slideshow
+                            <Run Text="{x:Static resx:Strings.Shortcuts_SpaceEnter}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_SpaceEnter_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="F:" FontWeight="Bold"/> Toggle fullscreen
+                            <Run Text="{x:Static resx:Strings.Shortcuts_F}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_F_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="D:" FontWeight="Bold"/> Toggle debug console
+                            <Run Text="{x:Static resx:Strings.Shortcuts_D}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_D_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="Shift + &lt;:" FontWeight="Bold"/> Increase speed (+0.5s)
+                            <Run Text="{x:Static resx:Strings.Shortcuts_ShiftLess}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_ShiftLess_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="Shift + &gt;:" FontWeight="Bold"/> Decrease speed (-0.5s)
+                            <Run Text="{x:Static resx:Strings.Shortcuts_ShiftGreater}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_ShiftGreater_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="M:" FontWeight="Bold"/> Increase mosaic panes
+                            <Run Text="{x:Static resx:Strings.Shortcuts_PlusMinus}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_PlusMinus_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="N:" FontWeight="Bold"/> Decrease mosaic panes
+                            <Run Text="{x:Static resx:Strings.Shortcuts_M}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_M_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="Ctrl+W:" FontWeight="Bold"/> Close app
+                            <Run Text="{x:Static resx:Strings.Shortcuts_N}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_N_Desc}"/>
                         </TextBlock>
                         <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
-                            <Run Text="Ctrl+Q:" FontWeight="Bold"/> Close and delete all images
+                            <Run Text="{x:Static resx:Strings.Shortcuts_I}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_I_Desc}"/>
+                        </TextBlock>
+                        <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
+                            <Run Text="{x:Static resx:Strings.Shortcuts_CtrlW}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_CtrlW_Desc}"/>
+                        </TextBlock>
+                        <TextBlock Foreground="#CCCCCC" FontSize="11" Margin="0,2">
+                            <Run Text="{x:Static resx:Strings.Shortcuts_CtrlQ}" FontWeight="Bold"/>
+                            <Run Text="{x:Static resx:Strings.Shortcuts_CtrlQ_Desc}"/>
                         </TextBlock>
                     </StackPanel>
                 </Border>
