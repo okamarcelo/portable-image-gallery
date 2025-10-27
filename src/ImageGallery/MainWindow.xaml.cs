@@ -58,9 +58,6 @@ public partial class MainWindow : Window
             // Wire up event handlers
             Log.Debug("Setting up event handlers");
             SetupEventHandlers();
-
-            // Setup mouse handler for window dragging
-            this.MouseLeftButtonDown += MainWindow_MouseLeftButtonDown;
             
             // Setup window size change handler for orientation-aware layout
             this.SizeChanged += MainWindow_SizeChanged;
@@ -266,10 +263,11 @@ public partial class MainWindow : Window
             MessageBox.Show($"Error loading images:\n{ex.Message}", "Load Error", 
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
-    }        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    }        
+        private void Window_MouseLeftButtonDown_Border(object sender, MouseButtonEventArgs e)
         {
-            // Allow dragging window when not in fullscreen and not zoomed
-            if (!isFullscreen && !zoomController.IsZoomed)
+            // Allow dragging window when not in fullscreen, not zoomed, and not near edges (for resizing)
+            if (!isFullscreen && !zoomController.IsZoomed && !IsNearEdge(e.GetPosition(this)))
             {
                 try
                 {
@@ -280,6 +278,66 @@ public partial class MainWindow : Window
                     // Ignore exceptions when dragging
                 }
             }
+        }
+
+        private void Window_MouseMove(object sender, MouseEventArgs e)
+        {
+            // Update cursor based on position for resize indication
+            if (isFullscreen || zoomController.IsZoomed)
+                return;
+
+            var position = e.GetPosition(this);
+            UpdateCursorForResize(position);
+        }
+
+        private bool IsNearEdge(Point position)
+        {
+            const double resizeBorder = 5;
+            
+            bool nearLeft = position.X <= resizeBorder;
+            bool nearRight = position.X >= ActualWidth - resizeBorder;
+            bool nearTop = position.Y <= resizeBorder;
+            bool nearBottom = position.Y >= ActualHeight - resizeBorder;
+
+            return nearLeft || nearRight || nearTop || nearBottom;
+        }
+
+        private void UpdateCursorForResize(Point position)
+        {
+            const double resizeBorder = 5;
+            
+            bool nearLeft = position.X <= resizeBorder;
+            bool nearRight = position.X >= ActualWidth - resizeBorder;
+            bool nearTop = position.Y <= resizeBorder;
+            bool nearBottom = position.Y >= ActualHeight - resizeBorder;
+
+            // Set cursor based on position
+            if ((nearLeft && nearTop) || (nearRight && nearBottom))
+            {
+                Cursor = Cursors.SizeNWSE;
+            }
+            else if ((nearLeft && nearBottom) || (nearRight && nearTop))
+            {
+                Cursor = Cursors.SizeNESW;
+            }
+            else if (nearLeft || nearRight)
+            {
+                Cursor = Cursors.SizeWE;
+            }
+            else if (nearTop || nearBottom)
+            {
+                Cursor = Cursors.SizeNS;
+            }
+            else
+            {
+                Cursor = Cursors.Arrow;
+            }
+        }
+
+        private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // This method is kept for backward compatibility but not used anymore
+            // The Window_MouseLeftButtonDown_Border is now used instead
         }
 
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)

@@ -6,11 +6,21 @@
         Width="800"
         WindowStyle="None"
         AllowsTransparency="True"
-        ResizeMode="CanResize"
+        ResizeMode="CanResizeWithGrip"
         WindowState="Normal"
         Background="Black"
         KeyDown="Window_KeyDown"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        MouseMove="Window_MouseMove"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown_Border">
+    <WindowChrome.WindowChrome>
+        <WindowChrome 
+            CaptionHeight="0"
+            ResizeBorderThickness="5"
+            GlassFrameThickness="0"
+            CornerRadius="0"
+            UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
     <Grid>
         <!-- Mosaic Grid -->
         <ItemsControl x:Name="MosaicDisplay" MouseWheel="MosaicDisplay_MouseWheel"
