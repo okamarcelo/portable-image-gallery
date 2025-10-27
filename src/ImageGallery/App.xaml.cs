@@ -70,6 +70,11 @@ public partial class App : Application
                 
                 switch (arg.ToLower())
                 {
+                    case "-h":
+                    case "--help":
+                        ShowHelpAndExit();
+                        break;
+                        
                     case "-d":
                     case "--dir":
                         if (value != null)
@@ -137,6 +142,40 @@ public partial class App : Application
         }
 
         return cliArgs;
+    }
+
+    private void ShowHelpAndExit()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(Strings.CLI_Help_Usage);
+        sb.AppendLine();
+        sb.AppendLine(Strings.CLI_Help_Options);
+        sb.AppendLine(Strings.CLI_Help_Dir);
+        sb.AppendLine(Strings.CLI_Help_Pattern);
+        sb.AppendLine(Strings.CLI_Help_Mosaic);
+        sb.AppendLine(Strings.CLI_Help_Fullscreen);
+        sb.AppendLine(Strings.CLI_Help_Help);
+        sb.AppendLine();
+        sb.AppendLine(Strings.CLI_Help_Examples);
+        sb.AppendLine(Strings.CLI_Help_Example1);
+        sb.AppendLine(Strings.CLI_Help_Example2);
+        sb.AppendLine();
+        sb.AppendLine(Strings.CLI_Help_KeyboardShortcuts);
+        sb.AppendLine($"  {Strings.Shortcuts_ArrowKeys} {Strings.Shortcuts_ArrowKeys_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_SpaceEnter} {Strings.Shortcuts_SpaceEnter_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_F} {Strings.Shortcuts_F_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_D} {Strings.Shortcuts_D_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_ShiftLess} {Strings.Shortcuts_ShiftLess_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_ShiftGreater} {Strings.Shortcuts_ShiftGreater_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_PlusMinus} {Strings.Shortcuts_PlusMinus_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_M} {Strings.Shortcuts_M_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_N} {Strings.Shortcuts_N_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_I} {Strings.Shortcuts_I_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_CtrlW} {Strings.Shortcuts_CtrlW_Desc}");
+        sb.AppendLine($"  {Strings.Shortcuts_CtrlQ} {Strings.Shortcuts_CtrlQ_Desc}");
+        
+        MessageBox.Show(sb.ToString(), "ImageGallery Help", MessageBoxButton.OK, MessageBoxImage.Information);
+        Environment.Exit(0);
     }
 
     protected override void OnExit(ExitEventArgs e)

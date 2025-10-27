@@ -285,4 +285,116 @@
   <data name="SLog_ApplicationExiting" xml:space="preserve">
     <value>Application exiting</value>
   </data>
+  
+  <!-- Keyboard Shortcuts -->
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>KEYBOARD SHORTCUTS</value>
+  </data>
+  <data name="Shortcuts_ArrowKeys" xml:space="preserve">
+    <value>Arrow Keys:</value>
+  </data>
+  <data name="Shortcuts_ArrowKeys_Desc" xml:space="preserve">
+    <value>Navigate images</value>
+  </data>
+  <data name="Shortcuts_SpaceEnter" xml:space="preserve">
+    <value>Space / Enter:</value>
+  </data>
+  <data name="Shortcuts_SpaceEnter_Desc" xml:space="preserve">
+    <value>Pause/Resume slideshow</value>
+  </data>
+  <data name="Shortcuts_F" xml:space="preserve">
+    <value>F:</value>
+  </data>
+  <data name="Shortcuts_F_Desc" xml:space="preserve">
+    <value>Toggle fullscreen</value>
+  </data>
+  <data name="Shortcuts_D" xml:space="preserve">
+    <value>D:</value>
+  </data>
+  <data name="Shortcuts_D_Desc" xml:space="preserve">
+    <value>Toggle debug console</value>
+  </data>
+  <data name="Shortcuts_ShiftLess" xml:space="preserve">
+    <value>Shift + &lt;:</value>
+  </data>
+  <data name="Shortcuts_ShiftLess_Desc" xml:space="preserve">
+    <value>Increase speed (+0.5s)</value>
+  </data>
+  <data name="Shortcuts_ShiftGreater" xml:space="preserve">
+    <value>Shift + &gt;:</value>
+  </data>
+  <data name="Shortcuts_ShiftGreater_Desc" xml:space="preserve">
+    <value>Decrease speed (-0.5s)</value>
+  </data>
+  <data name="Shortcuts_PlusMinus" xml:space="preserve">
+    <value>+ / -:</value>
+  </data>
+  <data name="Shortcuts_PlusMinus_Desc" xml:space="preserve">
+    <value>Zoom in/out</value>
+  </data>
+  <data name="Shortcuts_M" xml:space="preserve">
+    <value>M:</value>
+  </data>
+  <data name="Shortcuts_M_Desc" xml:space="preserve">
+    <value>Increase mosaic panes</value>
+  </data>
+  <data name="Shortcuts_N" xml:space="preserve">
+    <value>N:</value>
+  </data>
+  <data name="Shortcuts_N_Desc" xml:space="preserve">
+    <value>Decrease mosaic panes</value>
+  </data>
+  <data name="Shortcuts_I" xml:space="preserve">
+    <value>I:</value>
+  </data>
+  <data name="Shortcuts_I_Desc" xml:space="preserve">
+    <value>Select root directory</value>
+  </data>
+  <data name="Shortcuts_CtrlW" xml:space="preserve">
+    <value>Ctrl+W:</value>
+  </data>
+  <data name="Shortcuts_CtrlW_Desc" xml:space="preserve">
+    <value>Close app</value>
+  </data>
+  <data name="Shortcuts_CtrlQ" xml:space="preserve">
+    <value>Ctrl+Q:</value>
+  </data>
+  <data name="Shortcuts_CtrlQ_Desc" xml:space="preserve">
+    <value>Close and delete all images</value>
+  </data>
+  
+  <!-- Command-line Help -->
+  <data name="CLI_Help_Usage" xml:space="preserve">
+    <value>Usage: ImageGallery [options]</value>
+  </data>
+  <data name="CLI_Help_Options" xml:space="preserve">
+    <value>Options:</value>
+  </data>
+  <data name="CLI_Help_Dir" xml:space="preserve">
+    <value>  -d, --dir &lt;path&gt;        Root directory to search for images</value>
+  </data>
+  <data name="CLI_Help_Pattern" xml:space="preserve">
+    <value>  -p, --pattern &lt;name&gt;    Folder name pattern to search (empty = all subdirectories)</value>
+  </data>
+  <data name="CLI_Help_Mosaic" xml:space="preserve">
+    <value>  -m, --mosaic &lt;count&gt;    Number of mosaic panes (1-9)</value>
+  </data>
+  <data name="CLI_Help_Fullscreen" xml:space="preserve">
+    <value>  -f, --fullscreen        Start in fullscreen mode</value>
+  </data>
+  <data name="CLI_Help_Help" xml:space="preserve">
+    <value>  -h, --help              Show this help message</value>
+  </data>
+  <data name="CLI_Help_Examples" xml:space="preserve">
+    <value>Examples:</value>
+  </data>
+  <data name="CLI_Help_Example1" xml:space="preserve">
+    <value>  ImageGallery -d C:\Photos -p vacation -f</value>
+  </data>
+  <data name="CLI_Help_Example2" xml:space="preserve">
+    <value>  ImageGallery -m 4</value>
+  </data>
+  <data name="CLI_Help_KeyboardShortcuts" xml:space="preserve">
+    <value>Keyboard Shortcuts:</value>
+  </data>
 </root>
