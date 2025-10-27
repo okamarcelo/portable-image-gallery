@@ -21,23 +21,23 @@ public class MosaicManager
 
         public void IncreasePanes()
         {
-            int currentSizeIndex = Array.IndexOf(mosaicSizes, mosaicPaneCount);
-            int nextIndex = (currentSizeIndex + 1) % mosaicSizes.Length;
+            var currentSizeIndex = Array.IndexOf(mosaicSizes, mosaicPaneCount);
+            var nextIndex = (currentSizeIndex + 1) % mosaicSizes.Length;
             mosaicPaneCount = mosaicSizes[nextIndex];
             
             PaneCountChanged?.Invoke(mosaicPaneCount);
-            string plural = mosaicPaneCount > 1 ? "s" : "";
+            var plural = mosaicPaneCount > 1 ? "s" : "";
             LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, mosaicPaneCount, plural));
         }
 
         public void DecreasePanes()
         {
-            int currentSizeIndex = Array.IndexOf(mosaicSizes, mosaicPaneCount);
-            int prevIndex = (currentSizeIndex - 1 + mosaicSizes.Length) % mosaicSizes.Length;
+            var currentSizeIndex = Array.IndexOf(mosaicSizes, mosaicPaneCount);
+            var prevIndex = (currentSizeIndex - 1 + mosaicSizes.Length) % mosaicSizes.Length;
             mosaicPaneCount = mosaicSizes[prevIndex];
             
             PaneCountChanged?.Invoke(mosaicPaneCount);
-            string plural = mosaicPaneCount > 1 ? "s" : "";
+            var plural = mosaicPaneCount > 1 ? "s" : "";
             LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, mosaicPaneCount, plural));
         }
 
@@ -48,7 +48,7 @@ public class MosaicManager
             // Handle special case for 2 panes - layout based on orientation
             if (mosaicPaneCount == 2)
             {
-                bool isLandscape = windowWidth >= windowHeight;
+                var isLandscape = windowWidth >= windowHeight;
                 
                 if (isLandscape)
                 {
@@ -65,7 +65,7 @@ public class MosaicManager
             }
             else
             {
-                int gridSize = (int)Math.Sqrt(mosaicPaneCount);
+                var gridSize = (int)Math.Sqrt(mosaicPaneCount);
                 grid.Rows = gridSize;
                 grid.Columns = gridSize;
             }

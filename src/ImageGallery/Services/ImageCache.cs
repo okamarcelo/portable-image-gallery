@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
 
 namespace ImageGallery.Services;
 
@@ -14,32 +15,37 @@ namespace ImageGallery.Services;
 /// </summary>
 public class ImageCache : IDisposable
 {
-    private readonly Dictionary<int, BitmapImage> cache = new();
-    private readonly Dictionary<int, string> imageFilePaths = new();
-    private readonly SemaphoreSlim cacheLock = new(1, 1);
-    private readonly int cacheSize;
-    private readonly int preloadAhead;
-    private readonly int keepBehind;
+    private readonly ILogger<ImageCache> _logger;
+    private readonly Dictionary<int, BitmapImage> _cache = new();
+    private readonly Dictionary<int, string> _imageFilePaths = new();
+    private readonly SemaphoreSlim _cacheLock = new(1, 1);
+    private readonly int _cacheSize;
+    private readonly int _preloadAhead;
+    private readonly int _keepBehind;
     
     /// <summary>
     /// Total number of images available
     /// </summary>
-    public int TotalImages => imageFilePaths.Count;
+    public int TotalImages => _imageFilePaths.Count;
     
     public event Action<string>? LogMessage;
 
     /// <summary>
     /// Creates a new image cache with the specified parameters.
     /// </summary>
+    /// <param name="logger">Logger instance</param>
     /// <param name="cacheSize">Maximum number of images to keep in memory (default: 64)</param>
     /// <param name="preloadAhead">Number of images to preload ahead of current position (default: 16)</param>
     /// <param name="keepBehind">Number of images to keep behind current position (default: 8)</param>
-    public ImageCache(int cacheSize = 64, int preloadAhead = 16, int keepBehind = 8)
+    public ImageCache(ILogger<ImageCache> logger, int cacheSize = 64, int preloadAhead = 16, int keepBehind = 8)
     {
-        this.cacheSize = cacheSize;
-        this.preloadAhead = preloadAhead;
-        this.keepBehind = keepBehind;
+        _logger = logger;
+        _cacheSize = cacheSize;
+        _preloadAhead = preloadAhead;
+        _keepBehind = keepBehind;
         
+        _logger.LogInformation("ImageCache initialized: size={CacheSize}, ahead={PreloadAhead}, behind={KeepBehind}", 
+            cacheSize, preloadAhead, keepBehind);
         LogMessage?.Invoke($"ImageCache initialized: size={cacheSize}, ahead={preloadAhead}, behind={keepBehind}");
     }
 
@@ -49,16 +55,17 @@ public class ImageCache : IDisposable
     /// </summary>
     public void Initialize(IEnumerable<string> filePaths)
     {
-        imageFilePaths.Clear();
-        cache.Clear();
+        _imageFilePaths.Clear();
+        _cache.Clear();
         
-        int index = 0;
+        var index = 0;
         foreach (var path in filePaths)
         {
-            imageFilePaths[index++] = path;
+            _imageFilePaths[index++] = path;
         }
         
-        LogMessage?.Invoke($"[ImageCache] Initialized with {imageFilePaths.Count} file paths (0 images in memory)");
+        _logger.LogInformation("ImageCache initialized with {FilePathCount} file paths (0 images in memory)", _imageFilePaths.Count);
+        LogMessage?.Invoke($"[ImageCache] Initialized with {_imageFilePaths.Count} file paths (0 images in memory)");
     }
 
     /// <summary>
@@ -66,46 +73,50 @@ public class ImageCache : IDisposable
     /// </summary>
     public async Task<BitmapImage?> GetImageAsync(int index)
     {
-        if (index < 0 || index >= imageFilePaths.Count)
+        if (index < 0 || index >= _imageFilePaths.Count)
             return null;
 
-        await cacheLock.WaitAsync();
+        await _cacheLock.WaitAsync();
         try
         {
             // Return from cache if available
-            if (cache.TryGetValue(index, out var cachedImage))
+            if (_cache.TryGetValue(index, out var cachedImage))
             {
                 return cachedImage;
             }
 
             // Enforce cache size limit before adding new image
-            if (cache.Count >= cacheSize)
+            if (_cache.Count >= _cacheSize)
             {
                 // Remove oldest entry (first key)
-                var oldestKey = cache.Keys.First();
-                cache.Remove(oldestKey);
+                var oldestKey = _cache.Keys.First();
+                _cache.Remove(oldestKey);
+                _logger.LogTrace("Cache full, evicted image {ImageIndex}", oldestKey);
                 LogMessage?.Invoke($"[ImageCache] Cache full, evicted image {oldestKey}");
             }
 
             // Load the image
-            var image = await LoadImageAsync(imageFilePaths[index]);
+            var image = await LoadImageAsync(_imageFilePaths[index]);
             if (image != null)
             {
-                cache[index] = image;
-                LogMessage?.Invoke($"[ImageCache] Loaded image {index}: {Path.GetFileName(imageFilePaths[index])} (cache: {cache.Count}/{cacheSize})");
+                _cache[index] = image;
+                _logger.LogTrace("Loaded image {Index}: {FileName} (cache: {CacheCount}/{CacheSize})", 
+                    index, Path.GetFileName(_imageFilePaths[index]), _cache.Count, _cacheSize);
+                LogMessage?.Invoke($"[ImageCache] Loaded image {index}: {Path.GetFileName(_imageFilePaths[index])} (cache: {_cache.Count}/{_cacheSize})");
             }
 
             return image;
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "FATAL ERROR in GetImageAsync({Index})", index);
             LogMessage?.Invoke($"[ImageCache] FATAL ERROR in GetImageAsync({index}): {ex.Message}");
             LogMessage?.Invoke($"[ImageCache] Stack trace: {ex.StackTrace}");
             throw; // Re-throw to trigger global handler
         }
         finally
         {
-            cacheLock.Release();
+            _cacheLock.Release();
         }
     }
 
@@ -117,9 +128,9 @@ public class ImageCache : IDisposable
     {
         var images = new List<BitmapImage>();
         
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
-            int index = (startIndex + i) % imageFilePaths.Count;
+            var index = (startIndex + i) % _imageFilePaths.Count;
             var image = await GetImageAsync(index);
             if (image != null)
             {
@@ -136,71 +147,72 @@ public class ImageCache : IDisposable
     /// </summary>
     public async Task PreloadWindowAsync(int currentIndex, int paneCount = 1)
     {
-        if (imageFilePaths.Count == 0)
+        if (_imageFilePaths.Count == 0)
             return;
 
         // Calculate window range
-        int windowStart = Math.Max(0, currentIndex - keepBehind);
-        int windowEnd = Math.Min(imageFilePaths.Count - 1, currentIndex + paneCount + preloadAhead);
+        var windowStart = Math.Max(0, currentIndex - _keepBehind);
+        var windowEnd = Math.Min(_imageFilePaths.Count - 1, currentIndex + paneCount + _preloadAhead);
         
         // Evict images outside the window (acquire lock only for cache modification)
-        await cacheLock.WaitAsync();
+        await _cacheLock.WaitAsync();
         try
         {
-            var keysToRemove = cache.Keys
+            var keysToRemove = _cache.Keys
                 .Where(k => k < windowStart || k > windowEnd)
                 .ToList();
             
             foreach (var key in keysToRemove)
             {
-                cache.Remove(key);
+                _cache.Remove(key);
             }
             
             if (keysToRemove.Count > 0)
             {
+                _logger.LogTrace("Evicted {EvictedCount} images from cache (freed memory)", keysToRemove.Count);
                 LogMessage?.Invoke($"[ImageCache] Evicted {keysToRemove.Count} images from cache (freed memory)");
             }
         }
         finally
         {
-            cacheLock.Release();
+            _cacheLock.Release();
         }
 
         // Preload images in the window that aren't cached (don't hold lock during loading)
         var tasks = new List<Task>();
-        for (int i = windowStart; i <= windowEnd; i++)
+        for (var i = windowStart; i <= windowEnd; i++)
         {
-            bool needsLoading = false;
-            await cacheLock.WaitAsync();
+            var needsLoading = false;
+            await _cacheLock.WaitAsync();
             try
             {
-                needsLoading = !cache.ContainsKey(i);
+                needsLoading = !_cache.ContainsKey(i);
             }
             finally
             {
-                cacheLock.Release();
+                _cacheLock.Release();
             }
             
             if (needsLoading)
             {
-                int index = i; // Capture for closure
+                var index = i; // Capture for closure
                 tasks.Add(Task.Run(async () =>
                 {
-                    var image = await LoadImageAsync(imageFilePaths[index]);
+                    var image = await LoadImageAsync(_imageFilePaths[index]);
                     if (image != null)
                     {
-                        await cacheLock.WaitAsync();
+                        await _cacheLock.WaitAsync();
                         try
                         {
                             // Only add if still within cache limit and not already present
-                            if (!cache.ContainsKey(index) && cache.Count < cacheSize)
+                            if (!_cache.ContainsKey(index) && _cache.Count < _cacheSize)
                             {
-                                cache[index] = image;
+                                _cache[index] = image;
                             }
                         }
                         finally
                         {
-                            cacheLock.Release();
+                            _cacheLock.Release();
                         }
                     }
                 }));
@@ -209,14 +221,16 @@ public class ImageCache : IDisposable
 
         await Task.WhenAll(tasks);
         
-        await cacheLock.WaitAsync();
+        await _cacheLock.WaitAsync();
         try
         {
-            LogMessage?.Invoke($"[ImageCache] Window: [{windowStart}-{windowEnd}], in cache: {cache.Count}/{cacheSize} images");
+            _logger.LogTrace("PreloadWindow: [{WindowStart}-{WindowEnd}], in cache: {CacheCount}/{CacheSize} images", 
+                windowStart, windowEnd, _cache.Count, _cacheSize);
+            LogMessage?.Invoke($"[ImageCache] Window: [{windowStart}-{windowEnd}], in cache: {_cache.Count}/{_cacheSize} images");
         }
         finally
         {
-            cacheLock.Release();
+            _cacheLock.Release();
         }
     }
 
@@ -225,7 +239,7 @@ public class ImageCache : IDisposable
     /// </summary>
     public string? GetFileName(int index)
     {
-        if (imageFilePaths.TryGetValue(index, out var path))
+        if (_imageFilePaths.TryGetValue(index, out var path))
         {
             return Path.GetFileName(path);
         }
@@ -237,16 +251,17 @@ public class ImageCache : IDisposable
     /// </summary>
     public async Task ClearCacheAsync()
     {
-        await cacheLock.WaitAsync();
+        await _cacheLock.WaitAsync();
         try
         {
-            int count = cache.Count;
-            cache.Clear();
+            var count = _cache.Count;
+            _cache.Clear();
+            _logger.LogInformation("Cleared {CachedImageCount} images from cache", count);
             LogMessage?.Invoke($"Cleared {count} images from cache");
         }
         finally
         {
-            cacheLock.Release();
+            _cacheLock.Release();
         }
     }
 
@@ -255,31 +270,33 @@ public class ImageCache : IDisposable
     /// </summary>
     public void Shuffle(Random random)
     {
-        if (imageFilePaths.Count <= 1)
+        if (_imageFilePaths.Count <= 1)
             return;
 
-        var paths = imageFilePaths.Values.ToList();
+        var paths = _imageFilePaths.Values.ToList();
         
         // Fisher-Yates shuffle
-        for (int i = paths.Count - 1; i > 0; i--)
+        for (var i = paths.Count - 1; i > 0; i--)
         {
-            int j = random.Next(i + 1);
+            var j = random.Next(i + 1);
             (paths[i], paths[j]) = (paths[j], paths[i]);
         }
 
-        imageFilePaths.Clear();
-        cache.Clear();
+        _imageFilePaths.Clear();
+        _cache.Clear();
         
-        for (int i = 0; i < paths.Count; i++)
+        for (var i = 0; i < paths.Count; i++)
         {
-            imageFilePaths[i] = paths[i];
+            _imageFilePaths[i] = paths[i];
         }
         
-        LogMessage?.Invoke($"[ImageCache] Shuffled {imageFilePaths.Count} images, cache cleared - will reload on demand");
+        _logger.LogInformation("Shuffled {ImageCount} images, cache cleared - will reload on demand", _imageFilePaths.Count);
+        LogMessage?.Invoke($"[ImageCache] Shuffled {_imageFilePaths.Count} images, cache cleared - will reload on demand");
     }
 
     private async Task<BitmapImage?> LoadImageAsync(string filePath)
     {
+        _logger.LogTrace("LoadImageAsync starting for: {FileName}", Path.GetFileName(filePath));
         LogMessage?.Invoke($"[ImageCache] LoadImageAsync starting for: {Path.GetFileName(filePath)}");
         return await Task.Run(() =>
         {
@@ -291,11 +308,13 @@ public class ImageCache : IDisposable
                 bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
                 bitmap.EndInit();
                 bitmap.Freeze(); // Make it thread-safe
+                _logger.LogTrace("LoadImageAsync SUCCESS for: {FileName}", Path.GetFileName(filePath));
                 LogMessage?.Invoke($"[ImageCache] LoadImageAsync SUCCESS for: {Path.GetFileName(filePath)}");
                 return bitmap;
             }
             catch (Exception ex)
             {
+                _logger.LogWarning(ex, "ERROR loading {FileName}", Path.GetFileName(filePath));
                 LogMessage?.Invoke($"[ImageCache] ERROR loading {Path.GetFileName(filePath)}: {ex.Message}");
                 return null;
             }
@@ -304,8 +323,9 @@ public class ImageCache : IDisposable
 
     public void Dispose()
     {
-        cache.Clear();
-        imageFilePaths.Clear();
-        cacheLock.Dispose();
+        _cache.Clear();
+        _imageFilePaths.Clear();
+        _cacheLock.Dispose();
     }
 }
+

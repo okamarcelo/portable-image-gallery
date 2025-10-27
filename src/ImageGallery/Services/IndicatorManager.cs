@@ -32,17 +32,17 @@ public class IndicatorManager
             speedIndicator.Visibility = Visibility.Visible;
 
             // Blink animation - 3 times
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await Task.Delay(150);
-                double opacity = speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
+                var opacity = speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
                 speedIndicator.Opacity = opacity;
             }
 
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await Task.Delay(150);
-                double opacity = speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
+                var opacity = speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
                 speedIndicator.Opacity = opacity;
             }
 
@@ -58,10 +58,10 @@ public class IndicatorManager
             zoomIndicator.Visibility = Visibility.Visible;
 
             // Blink animation (fainter than speed indicator)
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await Task.Delay(150);
-                double opacity = zoomIndicator.Opacity == 0.4 ? 0.2 : 0.4;
+                var opacity = zoomIndicator.Opacity == 0.4 ? 0.2 : 0.4;
             zoomIndicator.Opacity = opacity;
         }
 

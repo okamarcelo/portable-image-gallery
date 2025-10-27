@@ -89,7 +89,7 @@ public class SlideshowControllerTests
         var controller = new SlideshowController();
         
         // Act - decrease many times to try to go below 0.5
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             controller.DecreaseSpeed();
         }

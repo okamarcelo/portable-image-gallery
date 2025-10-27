@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.Logging;
 
 namespace ImageGallery.Services;
 
@@ -14,12 +15,12 @@ namespace ImageGallery.Services;
 /// </summary>
 public class ImageManager
     {
+        private readonly ILogger<ImageManager> _logger;
         private readonly ImageCache imageCache;
         private readonly string[] supportedExtensions = { ".png", ".jpg", ".jpeg", ".heic", ".heif", ".webp" };
         private readonly Random random = new Random();
         private string folderPattern = "images"; // Default pattern
         private bool useLazyLoading = true;
-        private bool verboseLogging = false;
 
         // Legacy support - will be empty when using lazy loading
         private readonly List<BitmapImage> images = new List<BitmapImage>();
@@ -34,12 +35,6 @@ public class ImageManager
             set => useLazyLoading = value; 
         }
         
-        public bool VerboseLogging
-        {
-            get => verboseLogging;
-            set => verboseLogging = value;
-        }
-        
         public string FolderPattern 
         { 
             get => folderPattern; 
@@ -50,9 +45,10 @@ public class ImageManager
         public event Action<int, int, int>? ImportProgressChanged; // current, total, errorCount
         public event Action<string>? LogMessage;
 
-        public ImageManager(int cacheSize = 32, int preloadAhead = 16, int keepBehind = 8)
+        public ImageManager(ILogger<ImageManager> logger, ImageCache imageCache)
         {
-            imageCache = new ImageCache(cacheSize, preloadAhead, keepBehind);
+            _logger = logger;
+            this.imageCache = imageCache;
             imageCache.LogMessage += msg => LogMessage?.Invoke(msg);
         }
 
@@ -61,18 +57,16 @@ public class ImageManager
         /// </summary>
         public async Task<List<BitmapImage>> GetImagesAsync(int startIndex, int count)
         {
-            if (verboseLogging)
-            {
-                LogMessage?.Invoke($"[VERBOSE] GetImagesAsync called: startIndex={startIndex}, count={count}, useLazyLoading={useLazyLoading}");
-            }
+            _logger.LogTrace("GetImagesAsync called: startIndex={StartIndex}, count={Count}, useLazyLoading={UseLazyLoading}", 
+                startIndex, count, useLazyLoading);
             
             if (!useLazyLoading)
             {
                 // Legacy mode - return from memory
                 var result = new List<BitmapImage>();
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
-                    int index = (startIndex + i) % images.Count;
+                    var index = (startIndex + i) % images.Count;
                     if (index >= 0 && index < images.Count)
                         result.Add(images[index]);
                 }
@@ -114,6 +108,7 @@ public class ImageManager
             if (useLazyLoading)
             {
                 imageCache.Shuffle(random);
+                _logger.LogInformation("Shuffled {ImageCount} images (lazy loading)", imageCache.TotalImages);
                 LogMessage?.Invoke($"Shuffled {imageCache.TotalImages} images (lazy loading)");
                 return;
             }
@@ -121,9 +116,9 @@ public class ImageManager
             if (images.Count <= 1) return;
 
             // Fisher-Yates shuffle algorithm
-            for (int i = images.Count - 1; i > 0; i--)
+            for (var i = images.Count - 1; i > 0; i--)
             {
-                int j = random.Next(i + 1);
+                var j = random.Next(i + 1);
                 
                 // Swap images
                 (images[i], images[j]) = (images[j], images[i]);
@@ -132,6 +127,7 @@ public class ImageManager
                 (imageFileNames[i], imageFileNames[j]) = (imageFileNames[j], imageFileNames[i]);
             }
 
+            _logger.LogInformation("Shuffled {ImageCount} images", images.Count);
             LogMessage?.Invoke($"Shuffled {images.Count} images");
         }
 
@@ -140,7 +136,7 @@ public class ImageManager
         /// </summary>
         public async Task LoadImagesAsync()
         {
-            string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
             await LoadImagesFromDirectoryAsync(appDirectory);
         }
 
@@ -157,13 +153,13 @@ public class ImageManager
                     images.Clear();
                     imageFileNames.Clear();
 
-                    string searchMessage = string.IsNullOrWhiteSpace(folderPattern)
+                    var searchMessage = string.IsNullOrWhiteSpace(folderPattern)
                         ? $"Searching for images in all subdirectories of {rootDirectory}..."
                         : $"Searching for '{folderPattern}' folders in {rootDirectory}...";
                     LogMessage?.Invoke(searchMessage);
 
                     var matchingFolders = new List<string>();
-                    int accessDeniedCount = 0;
+                    var accessDeniedCount = 0;
                     FindMatchingFoldersRecursive(rootDirectory, matchingFolders, ref accessDeniedCount);
 
                     if (accessDeniedCount > 0)
@@ -173,14 +169,14 @@ public class ImageManager
 
                     if (matchingFolders.Count == 0)
                     {
-                        string notFoundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        var notFoundMessage = string.IsNullOrWhiteSpace(folderPattern)
                             ? "No subdirectories found"
                             : $"No '{folderPattern}' folders found";
                         LogMessage?.Invoke(notFoundMessage);
                         return;
                     }
 
-                    string foundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                    var foundMessage = string.IsNullOrWhiteSpace(folderPattern)
                         ? $"Searching in {matchingFolders.Count} subdirectories"
                         : $"Found {matchingFolders.Count} '{folderPattern}' folder(s)";
                     LogMessage?.Invoke(foundMessage);
@@ -205,40 +201,38 @@ public class ImageManager
 
                     if (allImageFiles.Count == 0)
                     {
-                        string noImagesMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        var noImagesMessage = string.IsNullOrWhiteSpace(folderPattern)
                             ? "No images found in subdirectories"
                             : $"No images found in '{folderPattern}' folders";
                         LogMessage?.Invoke(noImagesMessage);
                         return;
                     }
 
+                    _logger.LogTrace("Total image files found: {ImageFileCount}", allImageFiles.Count);
                     LogMessage?.Invoke($"[VERBOSE] Total image files found: {allImageFiles.Count}");
                     
-                    if (verboseLogging)
+                    _logger.LogTrace("Image files list (first 50):");
+                    var count = Math.Min(50, allImageFiles.Count);
+                    for (var i = 0; i < count; i++)
                     {
-                        LogMessage?.Invoke("[VERBOSE] === Image files list (first 50) ===");
-                        int count = Math.Min(50, allImageFiles.Count);
-                        for (int i = 0; i < count; i++)
-                        {
-                            LogMessage?.Invoke($"[VERBOSE] {i + 1}. {allImageFiles[i]}");
-                        }
-                        if (allImageFiles.Count > 50)
-                        {
-                            LogMessage?.Invoke($"[VERBOSE] ... and {allImageFiles.Count - 50} more files");
-                        }
-                        LogMessage?.Invoke("[VERBOSE] === End of image files list ===");
+                        _logger.LogTrace("  {Index}. {FileName}", i + 1, allImageFiles[i]);
+                    }
+                    if (allImageFiles.Count > 50)
+                    {
+                        _logger.LogTrace("  ... and {RemainingCount} more files", allImageFiles.Count - 50);
                     }
 
                     if (useLazyLoading)
                     {
                         // Lazy loading mode - just initialize cache with file paths (no images loaded yet!)
+                        _logger.LogInformation("Lazy Loading: Found {ImageCount} images - initializing cache (not loading into memory)", allImageFiles.Count);
                         LogMessage?.Invoke($"[Lazy Loading] Found {allImageFiles.Count} images - initializing cache (not loading into memory)");
                         imageCache.Initialize(allImageFiles);
                         
                         // Report progress as complete immediately since we're not loading actual images
                         LoadProgressChanged?.Invoke(allImageFiles.Count, allImageFiles.Count);
                         
-                        string successMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        var successMessage = string.IsNullOrWhiteSpace(folderPattern)
                             ? $"[Lazy Loading] Ready with {allImageFiles.Count} images (0 loaded in memory, will load on-demand)"
                             : $"[Lazy Loading] Ready with {allImageFiles.Count} images from '{folderPattern}' folders (0 loaded in memory)";
                         LogMessage?.Invoke(successMessage);
@@ -249,7 +243,7 @@ public class ImageManager
                         LogMessage?.Invoke($"Loading {allImageFiles.Count} image files into memory...");
                         LoadProgressChanged?.Invoke(0, allImageFiles.Count);
 
-                        int loadedCount = 0;
+                        var loadedCount = 0;
                         foreach (var file in allImageFiles)
                         {
                             try
@@ -274,7 +268,7 @@ public class ImageManager
                             }
                         }
 
-                        string successMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        var successMessage = string.IsNullOrWhiteSpace(folderPattern)
                             ? $"Successfully loaded {images.Count} images from subdirectories"
                             : $"Successfully loaded {images.Count} images from '{folderPattern}' folders";
                         LogMessage?.Invoke(successMessage);
@@ -292,20 +286,20 @@ public class ImageManager
         /// </summary>
         public async Task<int> ImportImagesAsync()
         {
-            int importedCount = 0;
+            var importedCount = 0;
             
             await Task.Run(() =>
             {
                 try
                 {
-                    string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    string searchMessage = string.IsNullOrWhiteSpace(folderPattern)
+                    var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    var searchMessage = string.IsNullOrWhiteSpace(folderPattern)
                         ? "Searching for images in all subdirectories..."
                         : $"Searching for '{folderPattern}' folders...";
                     LogMessage?.Invoke(searchMessage);
 
                     var matchingFolders = new List<string>();
-                    int accessDeniedCount = 0;
+                    var accessDeniedCount = 0;
                     FindMatchingFoldersRecursive(appDirectory, matchingFolders, ref accessDeniedCount);
 
                     if (accessDeniedCount > 0)
@@ -315,14 +309,14 @@ public class ImageManager
 
                     if (matchingFolders.Count == 0)
                     {
-                        string notFoundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        var notFoundMessage = string.IsNullOrWhiteSpace(folderPattern)
                             ? "No subdirectories found"
                             : $"No '{folderPattern}' folders found";
                         LogMessage?.Invoke(notFoundMessage);
                         return;
                     }
 
-                    string foundMessage = string.IsNullOrWhiteSpace(folderPattern)
+                    var foundMessage = string.IsNullOrWhiteSpace(folderPattern)
                         ? $"Found {matchingFolders.Count} subdirectories"
                         : $"Found {matchingFolders.Count} '{folderPattern}' folders";
                     LogMessage?.Invoke(foundMessage);
@@ -346,7 +340,7 @@ public class ImageManager
 
                     if (allFiles.Count == 0)
                     {
-                        string noImagesMessage = string.IsNullOrWhiteSpace(folderPattern)
+                        var noImagesMessage = string.IsNullOrWhiteSpace(folderPattern)
                             ? "No images found in subdirectories"
                             : $"No images found in '{folderPattern}' folders";
                         LogMessage?.Invoke(noImagesMessage);
@@ -365,23 +359,23 @@ public class ImageManager
                     {
                         try
                         {
-                            string hash = GetFileHash(file);
+                            var hash = GetFileHash(file);
                             existingHashes.Add(hash);
                         }
                         catch { }
                     }
 
-                    int importErrors = 0;
+                    var importErrors = 0;
                     foreach (var sourceFile in allFiles)
                     {
                         try
                         {
-                            string hash = GetFileHash(sourceFile);
+                            var hash = GetFileHash(sourceFile);
                             if (!existingHashes.Contains(hash))
                             {
-                                string extension = Path.GetExtension(sourceFile);
-                                string newFileName = $"{Guid.NewGuid()}{extension}";
-                                string destPath = Path.Combine(appDirectory, newFileName);
+                                var extension = Path.GetExtension(sourceFile);
+                                var newFileName = $"{Guid.NewGuid()}{extension}";
+                                var destPath = Path.Combine(appDirectory, newFileName);
                                 File.Copy(sourceFile, destPath, false);
                                 existingHashes.Add(hash);
                                 importedCount++;
@@ -415,7 +409,7 @@ public class ImageManager
         {
             try
             {
-                string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 var imageFiles = Directory.GetFiles(appDirectory)
                     .Where(f => supportedExtensions.Contains(Path.GetExtension(f).ToLower()));
 
@@ -473,7 +467,7 @@ public class ImageManager
     {
         using var sha256 = SHA256.Create();
         using var stream = File.OpenRead(filePath);
-        byte[] hash = sha256.ComputeHash(stream);
+        var hash = sha256.ComputeHash(stream);
         return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
 }

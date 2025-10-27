@@ -63,7 +63,7 @@ public class ZoomControllerTests
         var controller = new ZoomController();
 
         // Act - try to zoom out many times
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             controller.ZoomOut();
         }
@@ -153,7 +153,7 @@ public class ZoomControllerTests
     {
         // Arrange
         var controller = new ZoomController();
-        bool eventFired = false;
+        var eventFired = false;
         controller.ZoomedIn += () => eventFired = true;
 
         // Act
@@ -169,7 +169,7 @@ public class ZoomControllerTests
         // Arrange
         var controller = new ZoomController();
         controller.ZoomIn(); // Zoom in first
-        bool eventFired = false;
+        var eventFired = false;
         controller.ZoomedOut += () => eventFired = true;
 
         // Act

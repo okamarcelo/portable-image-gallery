@@ -24,9 +24,9 @@ public class ImageCacheTests : IDisposable
         Directory.CreateDirectory(testImageDir);
 
         testImagePaths = new List<string>();
-        for (int i = 0; i < TestImageCount; i++)
+        for (var i = 0; i < TestImageCount; i++)
         {
-            string path = Path.Combine(testImageDir, $"test_image_{i:D3}.jpg");
+            var path = Path.Combine(testImageDir, $"test_image_{i:D3}.jpg");
             // Create a minimal valid JPEG file (1x1 pixel red image)
             File.WriteAllBytes(path, CreateMinimalJpeg());
             testImagePaths.Add(path);
@@ -295,9 +295,9 @@ public class ImageCacheTests : IDisposable
 
         // Act - Request multiple images concurrently
         var tasks = new List<Task<System.Windows.Media.Imaging.BitmapImage?>>();
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
-            int index = i; // Capture for closure
+            var index = i; // Capture for closure
             tasks.Add(Task.Run(() => cache.GetImageAsync(index)));
         }
 

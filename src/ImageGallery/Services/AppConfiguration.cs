@@ -26,7 +26,7 @@ public static class AppConfiguration
             try
             {
                 // Check if app.config exists
-                string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageGallery.dll.config");
+                var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ImageGallery.dll.config");
                 if (!File.Exists(configPath))
                 {
                     _fileLoggingEnabled = false;
@@ -34,8 +34,8 @@ public static class AppConfiguration
                 }
 
                 // Read setting from app.config
-                string? value = ConfigurationManager.AppSettings["EnableFileLogging"];
-                _fileLoggingEnabled = bool.TryParse(value, out bool enabled) && enabled;
+                var value = ConfigurationManager.AppSettings["EnableFileLogging"];
+                _fileLoggingEnabled = bool.TryParse(value, out var enabled) && enabled;
                 return _fileLoggingEnabled.Value;
             }
             catch

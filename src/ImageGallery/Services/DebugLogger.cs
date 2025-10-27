@@ -26,7 +26,7 @@ public class DebugLogger : IDisposable
     public DebugLogger()
     {
         // Write log directly to current directory
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         logFilePath = $"imagegallery_{timestamp}.log";
         
         try
@@ -58,7 +58,7 @@ public class DebugLogger : IDisposable
     {
         try
         {
-            string timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
+            var timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
             
             // Write to file first (most important)
             LogToFile(timestampedMessage);
@@ -156,7 +156,7 @@ public class DebugLogger : IDisposable
 
     private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
     {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
             if (child is T typedChild)

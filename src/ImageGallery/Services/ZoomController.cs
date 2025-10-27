@@ -37,7 +37,7 @@ public class ZoomController
 
         public void ZoomIn()
         {
-            bool wasNotZoomed = zoomLevel <= 1.0;
+            var wasNotZoomed = zoomLevel <= 1.0;
             
             zoomLevel += 0.1;
             ApplyZoom();
@@ -94,7 +94,7 @@ public class ZoomController
         {
             if (isDraggingImage)
             {
-                Vector delta = currentPosition - lastMousePosition;
+                var delta = currentPosition - lastMousePosition;
                 
                 panOffset.X += delta.X;
                 panOffset.Y += delta.Y;
