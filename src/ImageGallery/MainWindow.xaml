@@ -267,12 +267,16 @@
                 Visibility="Collapsed"
                 VerticalAlignment="Bottom"
                 MaxHeight="200">
-            <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
-                <TextBlock x:Name="LogTextBlock" 
-                          Foreground="White" 
-                          FontFamily="Consolas"
-                          FontSize="12"
-                          TextWrapping="Wrap"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <TextBox x:Name="LogTextBlock" 
+                         Foreground="White" 
+                         FontFamily="Consolas"
+                         FontSize="12"
+                         TextWrapping="Wrap"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         IsReadOnly="True"
+                         IsReadOnlyCaretVisible="False"/>
             </ScrollViewer>
         </Border>
     </Grid>

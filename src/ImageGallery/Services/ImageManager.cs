@@ -19,6 +19,7 @@ public class ImageManager
         private readonly Random random = new Random();
         private string folderPattern = "images"; // Default pattern
         private bool useLazyLoading = true;
+        private bool verboseLogging = false;
 
         // Legacy support - will be empty when using lazy loading
         private readonly List<BitmapImage> images = new List<BitmapImage>();
@@ -31,6 +32,12 @@ public class ImageManager
         { 
             get => useLazyLoading; 
             set => useLazyLoading = value; 
+        }
+        
+        public bool VerboseLogging
+        {
+            get => verboseLogging;
+            set => verboseLogging = value;
         }
         
         public string FolderPattern 
@@ -54,6 +61,11 @@ public class ImageManager
         /// </summary>
         public async Task<List<BitmapImage>> GetImagesAsync(int startIndex, int count)
         {
+            if (verboseLogging)
+            {
+                LogMessage?.Invoke($"[VERBOSE] GetImagesAsync called: startIndex={startIndex}, count={count}, useLazyLoading={useLazyLoading}");
+            }
+            
             if (!useLazyLoading)
             {
                 // Legacy mode - return from memory
@@ -198,6 +210,23 @@ public class ImageManager
                             : $"No images found in '{folderPattern}' folders";
                         LogMessage?.Invoke(noImagesMessage);
                         return;
+                    }
+
+                    LogMessage?.Invoke($"[VERBOSE] Total image files found: {allImageFiles.Count}");
+                    
+                    if (verboseLogging)
+                    {
+                        LogMessage?.Invoke("[VERBOSE] === Image files list (first 50) ===");
+                        int count = Math.Min(50, allImageFiles.Count);
+                        for (int i = 0; i < count; i++)
+                        {
+                            LogMessage?.Invoke($"[VERBOSE] {i + 1}. {allImageFiles[i]}");
+                        }
+                        if (allImageFiles.Count > 50)
+                        {
+                            LogMessage?.Invoke($"[VERBOSE] ... and {allImageFiles.Count - 50} more files");
+                        }
+                        LogMessage?.Invoke("[VERBOSE] === End of image files list ===");
                     }
 
                     if (useLazyLoading)

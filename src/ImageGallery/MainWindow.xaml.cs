@@ -50,6 +50,7 @@ public partial class MainWindow : Window
             // Initialize services
             Log.Debug(Strings.SLog_CreatingServiceInstances);
             imageManager = new ImageManager(cacheSize: 32, preloadAhead: 16, keepBehind: 8);
+            imageManager.VerboseLogging = true; // Enable verbose logging for debugging
             zoomController = new ZoomController();
             mosaicManager = new MosaicManager();
             slideshowController = new SlideshowController();
@@ -380,10 +381,15 @@ public partial class MainWindow : Window
 
         private async Task ShowImageAsync(int index)
         {
+            debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {imageManager.ImageCount}");
+            
             if (imageManager.ImageCount > 0 && index >= 0 && index < imageManager.ImageCount)
             {
                 // Get images to display (supports both lazy loading and legacy mode)
+                debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={mosaicManager.PaneCount})");
                 var imagesToShow = await imageManager.GetImagesAsync(index, mosaicManager.PaneCount);
+                
+                debugLogger.Log($"[SHOW] GetImagesAsync returned {imagesToShow.Count} images");
                 
                 if (imagesToShow.Count > 0)
                 {
@@ -392,14 +398,14 @@ public partial class MainWindow : Window
                     // Update the grid layout with window dimensions for orientation detection
                     UpdateMosaicLayout();
 
-                    // Preload next images in background for smooth playback
-                    _ = imageManager.PreloadImagesAsync(index, mosaicManager.PaneCount);
-
                     var fileName = imageManager.GetImageFileName(index);
                     string logMsg = $"Showing: {fileName}";
                     if (mosaicManager.PaneCount > 1)
                         logMsg += $" (+{mosaicManager.PaneCount - 1} more)";
                     debugLogger.Log(logMsg);
+                    
+                    // Preload next images in background for smooth playback (after displaying current images)
+                    _ = imageManager.PreloadImagesAsync(index, mosaicManager.PaneCount);
                 }
             }
         }
@@ -517,8 +523,10 @@ public partial class MainWindow : Window
 
         private void NavigateNext()
         {
+            debugLogger.Log($"[NAV] Next pressed - currentIndex: {currentIndex}, imageCount: {imageManager.ImageCount}, paneCount: {mosaicManager.PaneCount}");
             slideshowController.Stop();
             currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.ImageCount;
+            debugLogger.Log($"[NAV] New currentIndex after Next: {currentIndex}");
             mosaicManager.ResetPaneIndex();
             ShowImage(currentIndex);
             FlashSide(true);
@@ -528,8 +536,10 @@ public partial class MainWindow : Window
 
         private void NavigatePrevious()
         {
+            debugLogger.Log($"[NAV] Previous pressed - currentIndex: {currentIndex}, imageCount: {imageManager.ImageCount}, paneCount: {mosaicManager.PaneCount}");
             slideshowController.Stop();
             currentIndex = (currentIndex - mosaicManager.PaneCount + imageManager.ImageCount) % imageManager.ImageCount;
+            debugLogger.Log($"[NAV] New currentIndex after Previous: {currentIndex}");
             mosaicManager.ResetPaneIndex();
             ShowImage(currentIndex);
             FlashSide(false);

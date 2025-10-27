@@ -31,10 +31,10 @@ public class ImageCache : IDisposable
     /// <summary>
     /// Creates a new image cache with the specified parameters.
     /// </summary>
-    /// <param name="cacheSize">Maximum number of images to keep in memory (default: 32)</param>
+    /// <param name="cacheSize">Maximum number of images to keep in memory (default: 64)</param>
     /// <param name="preloadAhead">Number of images to preload ahead of current position (default: 16)</param>
     /// <param name="keepBehind">Number of images to keep behind current position (default: 8)</param>
-    public ImageCache(int cacheSize = 32, int preloadAhead = 16, int keepBehind = 8)
+    public ImageCache(int cacheSize = 64, int preloadAhead = 16, int keepBehind = 8)
     {
         this.cacheSize = cacheSize;
         this.preloadAhead = preloadAhead;
@@ -78,6 +78,15 @@ public class ImageCache : IDisposable
                 return cachedImage;
             }
 
+            // Enforce cache size limit before adding new image
+            if (cache.Count >= cacheSize)
+            {
+                // Remove oldest entry (first key)
+                var oldestKey = cache.Keys.First();
+                cache.Remove(oldestKey);
+                LogMessage?.Invoke($"[ImageCache] Cache full, evicted image {oldestKey}");
+            }
+
             // Load the image
             var image = await LoadImageAsync(imageFilePaths[index]);
             if (image != null)
@@ -87,6 +96,12 @@ public class ImageCache : IDisposable
             }
 
             return image;
+        }
+        catch (Exception ex)
+        {
+            LogMessage?.Invoke($"[ImageCache] FATAL ERROR in GetImageAsync({index}): {ex.Message}");
+            LogMessage?.Invoke($"[ImageCache] Stack trace: {ex.StackTrace}");
+            throw; // Re-throw to trigger global handler
         }
         finally
         {
@@ -124,14 +139,14 @@ public class ImageCache : IDisposable
         if (imageFilePaths.Count == 0)
             return;
 
+        // Calculate window range
+        int windowStart = Math.Max(0, currentIndex - keepBehind);
+        int windowEnd = Math.Min(imageFilePaths.Count - 1, currentIndex + paneCount + preloadAhead);
+        
+        // Evict images outside the window (acquire lock only for cache modification)
         await cacheLock.WaitAsync();
         try
         {
-            // Calculate window range
-            int windowStart = Math.Max(0, currentIndex - keepBehind);
-            int windowEnd = Math.Min(imageFilePaths.Count - 1, currentIndex + paneCount + preloadAhead);
-            
-            // Evict images outside the window
             var keysToRemove = cache.Keys
                 .Where(k => k < windowStart || k > windowEnd)
                 .ToList();
@@ -145,36 +160,58 @@ public class ImageCache : IDisposable
             {
                 LogMessage?.Invoke($"[ImageCache] Evicted {keysToRemove.Count} images from cache (freed memory)");
             }
+        }
+        finally
+        {
+            cacheLock.Release();
+        }
 
-            // Preload images in the window that aren't cached
-            var tasks = new List<Task>();
-            for (int i = windowStart; i <= windowEnd; i++)
+        // Preload images in the window that aren't cached (don't hold lock during loading)
+        var tasks = new List<Task>();
+        for (int i = windowStart; i <= windowEnd; i++)
+        {
+            bool needsLoading = false;
+            await cacheLock.WaitAsync();
+            try
             {
-                if (!cache.ContainsKey(i))
+                needsLoading = !cache.ContainsKey(i);
+            }
+            finally
+            {
+                cacheLock.Release();
+            }
+            
+            if (needsLoading)
+            {
+                int index = i; // Capture for closure
+                tasks.Add(Task.Run(async () =>
                 {
-                    int index = i; // Capture for closure
-                    tasks.Add(Task.Run(async () =>
+                    var image = await LoadImageAsync(imageFilePaths[index]);
+                    if (image != null)
                     {
-                        var image = await LoadImageAsync(imageFilePaths[index]);
-                        if (image != null)
+                        await cacheLock.WaitAsync();
+                        try
                         {
-                            await cacheLock.WaitAsync();
-                            try
+                            // Only add if still within cache limit and not already present
+                            if (!cache.ContainsKey(index) && cache.Count < cacheSize)
                             {
                                 cache[index] = image;
-                                LogMessage?.Invoke($"[ImageCache] Preloaded image {index}");
-                            }
-                            finally
-                            {
-                                cacheLock.Release();
                             }
                         }
-                    }));
-                }
+                        finally
+                        {
+                            cacheLock.Release();
+                        }
+                    }
+                }));
             }
+        }
 
-            await Task.WhenAll(tasks);
-            
+        await Task.WhenAll(tasks);
+        
+        await cacheLock.WaitAsync();
+        try
+        {
             LogMessage?.Invoke($"[ImageCache] Window: [{windowStart}-{windowEnd}], in cache: {cache.Count}/{cacheSize} images");
         }
         finally
@@ -243,6 +280,7 @@ public class ImageCache : IDisposable
 
     private async Task<BitmapImage?> LoadImageAsync(string filePath)
     {
+        LogMessage?.Invoke($"[ImageCache] LoadImageAsync starting for: {Path.GetFileName(filePath)}");
         return await Task.Run(() =>
         {
             try
@@ -253,11 +291,12 @@ public class ImageCache : IDisposable
                 bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
                 bitmap.EndInit();
                 bitmap.Freeze(); // Make it thread-safe
+                LogMessage?.Invoke($"[ImageCache] LoadImageAsync SUCCESS for: {Path.GetFileName(filePath)}");
                 return bitmap;
             }
             catch (Exception ex)
             {
-                LogMessage?.Invoke($"Error loading {Path.GetFileName(filePath)}: {ex.Message}");
+                LogMessage?.Invoke($"[ImageCache] ERROR loading {Path.GetFileName(filePath)}: {ex.Message}");
                 return null;
             }
         });
