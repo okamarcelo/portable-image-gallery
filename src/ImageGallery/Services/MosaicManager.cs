@@ -10,35 +10,35 @@ namespace ImageGallery.Services;
 /// </summary>
 public class MosaicManager
 {
-    private int mosaicPaneCount = 1;
-    private readonly int[] mosaicSizes = { 1, 2, 4, 9, 16 };
+    private int _mosaicPaneCount = 1;
+    private readonly int[] _mosaicSizes = { 1, 2, 4, 9, 16 };
 
-    public int PaneCount => mosaicPaneCount;
-    public bool IsMosaicMode => mosaicPaneCount > 1;
+    public int PaneCount => _mosaicPaneCount;
+    public bool IsMosaicMode => _mosaicPaneCount > 1;
 
         public event Action<int>? PaneCountChanged; // new pane count
         public event Action<string>? LogMessage;
 
         public void IncreasePanes()
         {
-            var currentSizeIndex = Array.IndexOf(mosaicSizes, mosaicPaneCount);
-            var nextIndex = (currentSizeIndex + 1) % mosaicSizes.Length;
-            mosaicPaneCount = mosaicSizes[nextIndex];
+            var currentSizeIndex = Array.IndexOf(_mosaicSizes, _mosaicPaneCount);
+            var nextIndex = (currentSizeIndex + 1) % _mosaicSizes.Length;
+            _mosaicPaneCount = _mosaicSizes[nextIndex];
             
-            PaneCountChanged?.Invoke(mosaicPaneCount);
-            var plural = mosaicPaneCount > 1 ? "s" : "";
-            LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, mosaicPaneCount, plural));
+            PaneCountChanged?.Invoke(_mosaicPaneCount);
+            var plural = _mosaicPaneCount > 1 ? "s" : "";
+            LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, _mosaicPaneCount, plural));
         }
 
         public void DecreasePanes()
         {
-            var currentSizeIndex = Array.IndexOf(mosaicSizes, mosaicPaneCount);
-            var prevIndex = (currentSizeIndex - 1 + mosaicSizes.Length) % mosaicSizes.Length;
-            mosaicPaneCount = mosaicSizes[prevIndex];
+            var currentSizeIndex = Array.IndexOf(_mosaicSizes, _mosaicPaneCount);
+            var prevIndex = (currentSizeIndex - 1 + _mosaicSizes.Length) % _mosaicSizes.Length;
+            _mosaicPaneCount = _mosaicSizes[prevIndex];
             
-            PaneCountChanged?.Invoke(mosaicPaneCount);
-            var plural = mosaicPaneCount > 1 ? "s" : "";
-            LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, mosaicPaneCount, plural));
+            PaneCountChanged?.Invoke(_mosaicPaneCount);
+            var plural = _mosaicPaneCount > 1 ? "s" : "";
+            LogMessage?.Invoke(string.Format(Strings.Log_MosaicMode, _mosaicPaneCount, plural));
         }
 
         public void UpdateGridLayout(UniformGrid grid, double windowWidth, double windowHeight)
@@ -46,7 +46,7 @@ public class MosaicManager
             if (grid == null) return;
 
             // Handle special case for 2 panes - layout based on orientation
-            if (mosaicPaneCount == 2)
+            if (_mosaicPaneCount == 2)
             {
                 var isLandscape = windowWidth >= windowHeight;
                 
@@ -65,7 +65,7 @@ public class MosaicManager
             }
             else
             {
-                var gridSize = (int)Math.Sqrt(mosaicPaneCount);
+                var gridSize = (int)Math.Sqrt(_mosaicPaneCount);
                 grid.Rows = gridSize;
                 grid.Columns = gridSize;
             }

@@ -28,7 +28,6 @@ public class ImageCache : IDisposable
     /// </summary>
     public int TotalImages => _imageFilePaths.Count;
     
-    public event Action<string>? LogMessage;
 
     /// <summary>
     /// Creates a new image cache with the specified parameters.
@@ -46,7 +45,6 @@ public class ImageCache : IDisposable
         
         _logger.LogInformation("ImageCache initialized: size={CacheSize}, ahead={PreloadAhead}, behind={KeepBehind}", 
             cacheSize, preloadAhead, keepBehind);
-        LogMessage?.Invoke($"ImageCache initialized: size={cacheSize}, ahead={preloadAhead}, behind={keepBehind}");
     }
 
     /// <summary>
@@ -65,7 +63,6 @@ public class ImageCache : IDisposable
         }
         
         _logger.LogInformation("ImageCache initialized with {FilePathCount} file paths (0 images in memory)", _imageFilePaths.Count);
-        LogMessage?.Invoke($"[ImageCache] Initialized with {_imageFilePaths.Count} file paths (0 images in memory)");
     }
 
     /// <summary>
@@ -92,7 +89,6 @@ public class ImageCache : IDisposable
                 var oldestKey = _cache.Keys.First();
                 _cache.Remove(oldestKey);
                 _logger.LogTrace("Cache full, evicted image {ImageIndex}", oldestKey);
-                LogMessage?.Invoke($"[ImageCache] Cache full, evicted image {oldestKey}");
             }
 
             // Load the image
@@ -102,7 +98,6 @@ public class ImageCache : IDisposable
                 _cache[index] = image;
                 _logger.LogTrace("Loaded image {Index}: {FileName} (cache: {CacheCount}/{CacheSize})", 
                     index, Path.GetFileName(_imageFilePaths[index]), _cache.Count, _cacheSize);
-                LogMessage?.Invoke($"[ImageCache] Loaded image {index}: {Path.GetFileName(_imageFilePaths[index])} (cache: {_cache.Count}/{_cacheSize})");
             }
 
             return image;
@@ -110,8 +105,6 @@ public class ImageCache : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "FATAL ERROR in GetImageAsync({Index})", index);
-            LogMessage?.Invoke($"[ImageCache] FATAL ERROR in GetImageAsync({index}): {ex.Message}");
-            LogMessage?.Invoke($"[ImageCache] Stack trace: {ex.StackTrace}");
             throw; // Re-throw to trigger global handler
         }
         finally
@@ -170,7 +163,6 @@ public class ImageCache : IDisposable
             if (keysToRemove.Count > 0)
             {
                 _logger.LogTrace("Evicted {EvictedCount} images from cache (freed memory)", keysToRemove.Count);
-                LogMessage?.Invoke($"[ImageCache] Evicted {keysToRemove.Count} images from cache (freed memory)");
             }
         }
         finally
@@ -220,13 +212,11 @@ public class ImageCache : IDisposable
         }
 
         await Task.WhenAll(tasks);
-        
         await _cacheLock.WaitAsync();
         try
         {
             _logger.LogTrace("PreloadWindow: [{WindowStart}-{WindowEnd}], in cache: {CacheCount}/{CacheSize} images", 
                 windowStart, windowEnd, _cache.Count, _cacheSize);
-            LogMessage?.Invoke($"[ImageCache] Window: [{windowStart}-{windowEnd}], in cache: {_cache.Count}/{_cacheSize} images");
         }
         finally
         {
@@ -237,14 +227,8 @@ public class ImageCache : IDisposable
     /// <summary>
     /// Get the filename for an image at the specified index.
     /// </summary>
-    public string? GetFileName(int index)
-    {
-        if (_imageFilePaths.TryGetValue(index, out var path))
-        {
-            return Path.GetFileName(path);
-        }
-        return null;
-    }
+    public string? GetFileName(int index) => _imageFilePaths.TryGetValue(index, out var path) ? Path.GetFileName(path) : null;
+
 
     /// <summary>
     /// Clear all cached images from memory.
@@ -257,7 +241,6 @@ public class ImageCache : IDisposable
             var count = _cache.Count;
             _cache.Clear();
             _logger.LogInformation("Cleared {CachedImageCount} images from cache", count);
-            LogMessage?.Invoke($"Cleared {count} images from cache");
         }
         finally
         {
@@ -291,13 +274,11 @@ public class ImageCache : IDisposable
         }
         
         _logger.LogInformation("Shuffled {ImageCount} images, cache cleared - will reload on demand", _imageFilePaths.Count);
-        LogMessage?.Invoke($"[ImageCache] Shuffled {_imageFilePaths.Count} images, cache cleared - will reload on demand");
     }
 
     private async Task<BitmapImage?> LoadImageAsync(string filePath)
     {
         _logger.LogTrace("LoadImageAsync starting for: {FileName}", Path.GetFileName(filePath));
-        LogMessage?.Invoke($"[ImageCache] LoadImageAsync starting for: {Path.GetFileName(filePath)}");
         return await Task.Run(() =>
         {
             try
@@ -309,13 +290,11 @@ public class ImageCache : IDisposable
                 bitmap.EndInit();
                 bitmap.Freeze(); // Make it thread-safe
                 _logger.LogTrace("LoadImageAsync SUCCESS for: {FileName}", Path.GetFileName(filePath));
-                LogMessage?.Invoke($"[ImageCache] LoadImageAsync SUCCESS for: {Path.GetFileName(filePath)}");
                 return bitmap;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "ERROR loading {FileName}", Path.GetFileName(filePath));
-                LogMessage?.Invoke($"[ImageCache] ERROR loading {Path.GetFileName(filePath)}: {ex.Message}");
                 return null;
             }
         });

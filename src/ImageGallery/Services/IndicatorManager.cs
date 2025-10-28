@@ -11,62 +11,62 @@ namespace ImageGallery.Services;
 /// </summary>
 public class IndicatorManager
     {
-        private Border? speedIndicator;
-        private TextBlock? speedText;
-        private Border? zoomIndicator;
-        private TextBlock? zoomText;
+        private Border? _speedIndicator;
+        private TextBlock? _speedText;
+        private Border? _zoomIndicator;
+        private TextBlock? _zoomText;
 
         public void Initialize(Border speedBorder, TextBlock speedTxt, Border zoomBorder, TextBlock zoomTxt)
         {
-            speedIndicator = speedBorder;
-            speedText = speedTxt;
-            zoomIndicator = zoomBorder;
-            zoomText = zoomTxt;
+            _speedIndicator = speedBorder;
+            _speedText = speedTxt;
+            _zoomIndicator = zoomBorder;
+            _zoomText = zoomTxt;
         }
 
         public async void ShowSpeed(double intervalSeconds)
         {
-            if (speedIndicator == null || speedText == null) return;
+            if (_speedIndicator == null || _speedText == null) return;
 
-            speedText.Text = $"{intervalSeconds:0.0}s";
-            speedIndicator.Visibility = Visibility.Visible;
+            _speedText.Text = $"{intervalSeconds:0.0}s";
+            _speedIndicator.Visibility = Visibility.Visible;
 
             // Blink animation - 3 times
             for (var i = 0; i < 3; i++)
             {
                 await Task.Delay(150);
-                var opacity = speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
-                speedIndicator.Opacity = opacity;
+                var opacity = _speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
+                _speedIndicator.Opacity = opacity;
             }
 
             for (var i = 0; i < 3; i++)
             {
                 await Task.Delay(150);
-                var opacity = speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
-                speedIndicator.Opacity = opacity;
+                var opacity = _speedIndicator.Opacity == 1.0 ? 0.5 : 1.0;
+                _speedIndicator.Opacity = opacity;
             }
 
-            speedIndicator.Visibility = Visibility.Collapsed;
-            speedIndicator.Opacity = 1.0; // Reset for next time
+            _speedIndicator.Visibility = Visibility.Collapsed;
+            _speedIndicator.Opacity = 1.0; // Reset for next time
         }
 
         public async void ShowZoom(int zoomPercent)
         {
-            if (zoomIndicator == null || zoomText == null) return;
+            if (_zoomIndicator == null || _zoomText == null) return;
 
-            zoomText.Text = $"{zoomPercent}%";
-            zoomIndicator.Visibility = Visibility.Visible;
+            _zoomText.Text = $"{zoomPercent}%";
+            _zoomIndicator.Visibility = Visibility.Visible;
 
             // Blink animation (fainter than speed indicator)
             for (var i = 0; i < 3; i++)
             {
                 await Task.Delay(150);
-                var opacity = zoomIndicator.Opacity == 0.4 ? 0.2 : 0.4;
-            zoomIndicator.Opacity = opacity;
+                var opacity = _zoomIndicator.Opacity == 0.4 ? 0.2 : 0.4;
+            _zoomIndicator.Opacity = opacity;
         }
 
         await Task.Delay(500);
-        zoomIndicator.Visibility = Visibility.Collapsed;
-        zoomIndicator.Opacity = 0.4;
+        _zoomIndicator.Visibility = Visibility.Collapsed;
+        _zoomIndicator.Opacity = 0.4;
     }
 }

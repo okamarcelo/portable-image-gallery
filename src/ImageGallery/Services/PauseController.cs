@@ -13,15 +13,15 @@ namespace ImageGallery.Services;
 /// </summary>
 public class PauseController
     {
-        private bool isPaused = false;
-        private readonly DispatcherTimer blinkTimer;
+        private bool _isPaused = false;
+        private readonly DispatcherTimer _blinkTimer;
 
-        private FrameworkElement? pausePlayIcon;
-        private Rectangle? pauseBar1;
-        private Rectangle? pauseBar2;
-        private Polygon? playTriangle;
+        private FrameworkElement? _pausePlayIcon;
+        private Rectangle? _pauseBar1;
+        private Rectangle? _pauseBar2;
+        private Polygon? _playTriangle;
 
-        public bool IsPaused => isPaused;
+        public bool IsPaused => _isPaused;
 
         public event Action? Paused;
         public event Action? Resumed;
@@ -29,24 +29,24 @@ public class PauseController
 
         public PauseController()
         {
-            blinkTimer = new DispatcherTimer();
-            blinkTimer.Interval = TimeSpan.FromMilliseconds(800);
-            blinkTimer.Tick += BlinkTimer_Tick;
+            _blinkTimer = new DispatcherTimer();
+            _blinkTimer.Interval = TimeSpan.FromMilliseconds(800);
+            _blinkTimer.Tick += BlinkTimer_Tick;
         }
 
         public void Initialize(FrameworkElement icon, Rectangle bar1, Rectangle bar2, Polygon triangle)
         {
-            pausePlayIcon = icon;
-            pauseBar1 = bar1;
-            pauseBar2 = bar2;
-            playTriangle = triangle;
+            _pausePlayIcon = icon;
+            _pauseBar1 = bar1;
+            _pauseBar2 = bar2;
+            _playTriangle = triangle;
         }
 
         public void Toggle()
         {
-            isPaused = !isPaused;
+            _isPaused = !_isPaused;
 
-            if (isPaused)
+            if (_isPaused)
             {
                 ShowPauseIcon();
                 Paused?.Invoke();
@@ -62,7 +62,7 @@ public class PauseController
 
         public void Pause()
         {
-            if (!isPaused)
+            if (!_isPaused)
             {
                 Toggle();
             }
@@ -70,7 +70,7 @@ public class PauseController
 
         public void Resume()
         {
-            if (isPaused)
+            if (_isPaused)
             {
                 Toggle();
             }
@@ -78,53 +78,53 @@ public class PauseController
 
         private void ShowPauseIcon()
         {
-            if (pausePlayIcon == null) return;
+            if (_pausePlayIcon == null) return;
 
-            pausePlayIcon.Visibility = Visibility.Visible;
-            if (pauseBar1 != null) pauseBar1.Visibility = Visibility.Visible;
-            if (pauseBar2 != null) pauseBar2.Visibility = Visibility.Visible;
-            if (playTriangle != null) playTriangle.Visibility = Visibility.Collapsed;
+            _pausePlayIcon.Visibility = Visibility.Visible;
+            if (_pauseBar1 != null) _pauseBar1.Visibility = Visibility.Visible;
+            if (_pauseBar2 != null) _pauseBar2.Visibility = Visibility.Visible;
+            if (_playTriangle != null) _playTriangle.Visibility = Visibility.Collapsed;
 
-            blinkTimer.Start();
+            _blinkTimer.Start();
         }
 
         private void ShowPlayIcon()
         {
-            if (pausePlayIcon == null) return;
+            if (_pausePlayIcon == null) return;
 
-            if (pauseBar1 != null) pauseBar1.Visibility = Visibility.Collapsed;
-            if (pauseBar2 != null) pauseBar2.Visibility = Visibility.Collapsed;
-            if (playTriangle != null) playTriangle.Visibility = Visibility.Visible;
+            if (_pauseBar1 != null) _pauseBar1.Visibility = Visibility.Collapsed;
+            if (_pauseBar2 != null) _pauseBar2.Visibility = Visibility.Collapsed;
+            if (_playTriangle != null) _playTriangle.Visibility = Visibility.Visible;
 
-            blinkTimer.Start();
+            _blinkTimer.Start();
 
             // Auto-hide after 2 seconds
             Task.Delay(2000).ContinueWith(_ =>
             {
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    if (pausePlayIcon != null)
+                    if (_pausePlayIcon != null)
                     {
-                        pausePlayIcon.Visibility = Visibility.Collapsed;
+                        _pausePlayIcon.Visibility = Visibility.Collapsed;
                     }
-                    blinkTimer.Stop();
+                    _blinkTimer.Stop();
                 });
             });
         }
 
         private void BlinkTimer_Tick(object? sender, EventArgs e)
         {
-            if (isPaused)
+            if (_isPaused)
             {
-                if (pauseBar1 != null)
-                    pauseBar1.Opacity = pauseBar1.Opacity == 0.6 ? 0.3 : 0.6;
-            if (pauseBar2 != null)
-                pauseBar2.Opacity = pauseBar2.Opacity == 0.6 ? 0.3 : 0.6;
+                if (_pauseBar1 != null)
+                    _pauseBar1.Opacity = _pauseBar1.Opacity == 0.6 ? 0.3 : 0.6;
+            if (_pauseBar2 != null)
+                _pauseBar2.Opacity = _pauseBar2.Opacity == 0.6 ? 0.3 : 0.6;
         }
         else
         {
-            if (playTriangle != null)
-                playTriangle.Opacity = playTriangle.Opacity == 0.6 ? 0.3 : 0.6;
+            if (_playTriangle != null)
+                _playTriangle.Opacity = _playTriangle.Opacity == 0.6 ? 0.3 : 0.6;
         }
     }
 }
