@@ -1,29 +1,72 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using ImageGallery.Services;
 using Serilog;
 using ImageGallery.Resources;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace ImageGallery;
 
 public partial class App : Application
 {
+    public static IServiceProvider ServiceProvider { get; private set; } = null!;
+    
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        // Configure Serilog based on app.config
-        if (AppConfiguration.IsFileLoggingEnabled)
+        // Check if appsettings.json exists
+        var appSettingsPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+        var hasAppSettings = File.Exists(appSettingsPath);
+        
+        IConfiguration? configuration = null;
+        var loggingEnabled = true;
+        var verboseLogging = false;
+        
+        if (hasAppSettings)
         {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.File(
-                    AppConfiguration.LogFilePath,
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 7,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
+            // Build configuration from appsettings.json
+            configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .Build();
 
+            // Get logging settings from configuration
+            loggingEnabled = configuration.GetValue<bool>("AppSettings:Logging:Enabled", true);
+            verboseLogging = configuration.GetValue<bool>("AppSettings:Logging:VerboseLogging", false);
+        }
+
+        // Create DebugLogger instance (will be shared)
+        var debugLogger = new DebugLogger();
+
+        // Configure Serilog with DebugLogger sink
+        if (loggingEnabled && hasAppSettings && configuration != null)
+        {
+            // Use configuration from appsettings.json + add DebugLogger sink
+            var loggerConfig = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .WriteTo.DebugLogger(debugLogger);
+            
+            // Set minimum level based on verbose logging setting
+            if (verboseLogging)
+            {
+                loggerConfig.MinimumLevel.Verbose();
+            }
+            
+            Log.Logger = loggerConfig.CreateLogger();
+            Log.Information(Strings.SLog_ApplicationStarting);
+        }
+        else if (loggingEnabled && !hasAppSettings)
+        {
+            // No appsettings.json - log to DebugLogger only
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.DebugLogger(debugLogger)
+                .CreateLogger();
             Log.Information(Strings.SLog_ApplicationStarting);
         }
         else
@@ -32,6 +75,11 @@ public partial class App : Application
             Log.Logger = new LoggerConfiguration()
                 .CreateLogger();
         }
+
+        // Setup dependency injection
+        var services = new ServiceCollection();
+        ConfigureServices(services, debugLogger);
+        ServiceProvider = services.BuildServiceProvider();
 
         // Log unhandled exceptions
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
@@ -68,25 +116,55 @@ public partial class App : Application
         // Parse command-line arguments
         var cliArgs = ParseCommandLineArguments(e.Args);
         
-        // Create and show main window with CLI arguments
-        var mainWindow = new MainWindow(cliArgs);
+        // Create and show main window with CLI arguments from DI
+        var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
+        mainWindow.SetCommandLineArguments(cliArgs);
         mainWindow.Show();
+    }
+
+    private void ConfigureServices(IServiceCollection services, DebugLogger debugLogger)
+    {
+        // Add logging
+        services.AddLogging(builder =>
+        {
+            builder.ClearProviders();
+            builder.AddSerilog(dispose: true);
+        });
+
+        // Add the shared DebugLogger instance
+        services.AddSingleton(debugLogger);
+
+        // Add services
+        services.AddSingleton<ImageCache>(sp => 
+        {
+            var logger = sp.GetRequiredService<ILogger<ImageCache>>();
+            return new ImageCache(logger, cacheSize: 64, preloadAhead: 16, keepBehind: 8);
+        });
+        services.AddSingleton<ImageManager>();
+        services.AddSingleton<ZoomController>();
+        services.AddSingleton<MosaicManager>();
+        services.AddSingleton<SlideshowController>();
+        services.AddSingleton<PauseController>();
+        services.AddSingleton<IndicatorManager>();
+        
+        // Add MainWindow as transient (created per request)
+        services.AddTransient<MainWindow>();
     }
 
     private CommandLineArguments ParseCommandLineArguments(string[] args)
     {
         var cliArgs = new CommandLineArguments();
-        bool hasPatternOrMosaic = false;
+        var hasPatternOrMosaic = false;
 
-        for (int i = 0; i < args.Length; i++)
+        for (var i = 0; i < args.Length; i++)
         {
-            string arg = args[i];
+            var arg = args[i];
             
             // Check if this is a flag
             if (arg.StartsWith("-"))
             {
                 // Get the next value if it exists
-                string? value = (i + 1 < args.Length && !args[i + 1].StartsWith("-")) ? args[i + 1] : null;
+                var value = (i + 1 < args.Length && !args[i + 1].StartsWith("-")) ? args[i + 1] : null;
                 
                 switch (arg.ToLower())
                 {
@@ -128,7 +206,7 @@ public partial class App : Application
                     case "-m":
                     case "--mosaic":
                         hasPatternOrMosaic = true;
-                        if (value != null && int.TryParse(value, out int panes) && panes > 0)
+                        if (value != null && int.TryParse(value, out var panes) && panes > 0)
                         {
                             cliArgs.PaneCount = panes;
                             Log.Information(Strings.SLog_PaneCount, cliArgs.PaneCount);

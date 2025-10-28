@@ -12,17 +12,17 @@ namespace ImageGallery.Services;
 /// </summary>
 public class ZoomController
     {
-        private double zoomLevel = 1.0;
-        private Point panOffset = new Point(0, 0);
-        private Point lastMousePosition;
-        private bool isDraggingImage = false;
+        private double _zoomLevel = 1.0;
+        private Point _panOffset = new Point(0, 0);
+        private Point _lastMousePosition;
+        private bool _isDraggingImage = false;
 
-        private ScaleTransform? scaleTransform;
-        private TranslateTransform? translateTransform;
+        private ScaleTransform? _scaleTransform;
+        private TranslateTransform? _translateTransform;
 
-        public double ZoomLevel => zoomLevel;
-        public bool IsZoomed => zoomLevel > 1.0;
-        public int ZoomPercent => (int)(zoomLevel * 100);
+        public double ZoomLevel => _zoomLevel;
+        public bool IsZoomed => _zoomLevel > 1.0;
+        public int ZoomPercent => (int)(_zoomLevel * 100);
 
         public event Action<double>? ZoomChanged; // zoom level
         public event Action? ZoomedIn; // fired when zoom > 1.0
@@ -31,18 +31,18 @@ public class ZoomController
 
         public void Initialize(ScaleTransform scale, TranslateTransform translate)
         {
-            scaleTransform = scale;
-            translateTransform = translate;
+            _scaleTransform = scale;
+            _translateTransform = translate;
         }
 
         public void ZoomIn()
         {
-            bool wasNotZoomed = zoomLevel <= 1.0;
+            var wasNotZoomed = _zoomLevel <= 1.0;
             
-            zoomLevel += 0.1;
+            _zoomLevel += 0.1;
             ApplyZoom();
             
-            if (wasNotZoomed && zoomLevel > 1.0)
+            if (wasNotZoomed && _zoomLevel > 1.0)
             {
                 ZoomedIn?.Invoke();
             }
@@ -50,13 +50,13 @@ public class ZoomController
 
         public void ZoomOut()
         {
-            if (zoomLevel > 1.0)
+            if (_zoomLevel > 1.0)
             {
-                zoomLevel -= 0.1;
-                if (zoomLevel < 1.0) zoomLevel = 1.0;
+                _zoomLevel -= 0.1;
+                if (_zoomLevel < 1.0) _zoomLevel = 1.0;
                 ApplyZoom();
                 
-                if (zoomLevel <= 1.0)
+                if (_zoomLevel <= 1.0)
                 {
                     ResetPan();
                     ZoomedOut?.Invoke();
@@ -80,62 +80,62 @@ public class ZoomController
         {
             if (IsZoomed)
             {
-                isDraggingImage = true;
-                lastMousePosition = mousePosition;
+                _isDraggingImage = true;
+                _lastMousePosition = mousePosition;
             }
         }
 
         public void EndDrag()
         {
-            isDraggingImage = false;
+            _isDraggingImage = false;
         }
 
         public void UpdateDrag(Point currentPosition)
         {
-            if (isDraggingImage)
+            if (_isDraggingImage)
             {
-                Vector delta = currentPosition - lastMousePosition;
+                var delta = currentPosition - _lastMousePosition;
                 
-                panOffset.X += delta.X;
-                panOffset.Y += delta.Y;
+                _panOffset.X += delta.X;
+                _panOffset.Y += delta.Y;
                 
                 ApplyPan();
                 
-                lastMousePosition = currentPosition;
+                _lastMousePosition = currentPosition;
             }
         }
 
         public void ResetZoom()
         {
-            zoomLevel = 1.0;
+            _zoomLevel = 1.0;
             ResetPan();
             ApplyZoom();
         }
 
         private void ApplyZoom()
         {
-            if (scaleTransform != null)
+            if (_scaleTransform != null)
             {
-                scaleTransform.ScaleX = zoomLevel;
-                scaleTransform.ScaleY = zoomLevel;
+                _scaleTransform.ScaleX = _zoomLevel;
+                _scaleTransform.ScaleY = _zoomLevel;
             }
             
-            ZoomChanged?.Invoke(zoomLevel);
+            ZoomChanged?.Invoke(_zoomLevel);
             LogMessage?.Invoke(string.Format(Strings.Log_Zoom, ZoomPercent));
         }
 
         private void ApplyPan()
         {
-            if (translateTransform != null)
+            if (_translateTransform != null)
             {
-                translateTransform.X = panOffset.X;
-                translateTransform.Y = panOffset.Y;
+                _translateTransform.X = _panOffset.X;
+                _translateTransform.Y = _panOffset.Y;
             }
         }
 
     private void ResetPan()
     {
-        panOffset = new Point(0, 0);
+        _panOffset = new Point(0, 0);
         ApplyPan();
     }
 }

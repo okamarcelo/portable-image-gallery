@@ -7,8 +7,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageGallery.Services;
-using Serilog;
 using ImageGallery.Resources;
+using Microsoft.Extensions.Logging;
 
 namespace ImageGallery;
 
@@ -18,67 +18,74 @@ namespace ImageGallery;
 public partial class MainWindow : Window
     {
         // Services (Dependency Injection pattern)
-        private readonly ImageManager imageManager;
-        private readonly ZoomController zoomController;
-        private readonly MosaicManager mosaicManager;
-        private readonly SlideshowController slideshowController;
-        private readonly PauseController pauseController;
-        private readonly DebugLogger debugLogger;
-        private readonly IndicatorManager indicatorManager;
+        private readonly ILogger<MainWindow> _logger;
+        private readonly ImageManager _imageManager;
+        private readonly ZoomController _zoomController;
+        private readonly MosaicManager _mosaicManager;
+        private readonly SlideshowController _slideshowController;
+        private readonly PauseController _pauseController;
+        private readonly DebugLogger _debugLogger;
+        private readonly IndicatorManager _indicatorManager;
 
         // UI state
-        private int currentIndex = 0;
-        private bool isFullscreen = false;
-        private WindowState previousWindowState;
-        private WindowStyle previousWindowStyle;
-        private CommandLineArguments? cliArgs;
+        private int _currentIndex = 0;
+        private bool _isFullscreen = false;
+        private WindowState _previousWindowState;
+        private WindowStyle _previousWindowStyle;
+        private CommandLineArguments? _cliArgs;
 
-    public MainWindow() : this(new CommandLineArguments())
-    {
-    }
-
-    public MainWindow(CommandLineArguments commandLineArgs)
+    public MainWindow(
+        ILogger<MainWindow> logger,
+        ImageManager imageManager,
+        ZoomController zoomController,
+        MosaicManager mosaicManager,
+        SlideshowController slideshowController,
+        PauseController pauseController,
+        DebugLogger debugLogger,
+        IndicatorManager indicatorManager)
     {
         try
         {
-            Log.Information(Strings.SLog_MainWindowInitializing);
+            _logger = logger;
+            this._imageManager = imageManager;
+            this._zoomController = zoomController;
+            this._mosaicManager = mosaicManager;
+            this._slideshowController = slideshowController;
+            this._pauseController = pauseController;
+            this._debugLogger = debugLogger;
+            this._indicatorManager = indicatorManager;
+            
+            _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
 
-            // Store CLI arguments
-            cliArgs = commandLineArgs;
-
-            // Initialize services
-            Log.Debug(Strings.SLog_CreatingServiceInstances);
-            imageManager = new ImageManager(cacheSize: 32, preloadAhead: 16, keepBehind: 8);
-            imageManager.VerboseLogging = true; // Enable verbose logging for debugging
-            zoomController = new ZoomController();
-            mosaicManager = new MosaicManager();
-            slideshowController = new SlideshowController();
-            pauseController = new PauseController();
-            debugLogger = new DebugLogger();
-            indicatorManager = new IndicatorManager();
-
             // Wire up event handlers
-            Log.Debug(Strings.SLog_SettingUpEventHandlers);
+            _logger.LogDebug(Strings.SLog_SettingUpEventHandlers);
             SetupEventHandlers();
             
             // Setup window size change handler for orientation-aware layout
             this.SizeChanged += MainWindow_SizeChanged;
             
-            Log.Information(Strings.SLog_MainWindowInitializedSuccessfully);
+            _logger.LogInformation(Strings.SLog_MainWindowInitializedSuccessfully);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, Strings.SLog_FailedToInitializeMainWindow);
+            _logger.LogCritical(ex, Strings.SLog_FailedToInitializeMainWindow);
             MessageBox.Show(string.Format(Strings.Error_InitializationMessage, ex.Message), 
                 Strings.Error_InitializationTitle, 
                 MessageBoxButton.OK, MessageBoxImage.Error);
             throw;
         }
-    }        private void SetupEventHandlers()
+    }
+    
+    public void SetCommandLineArguments(CommandLineArguments commandLineArgs)
+    {
+        _cliArgs = commandLineArgs;
+    }
+    
+    private void SetupEventHandlers()
         {
             // ImageManager events
-            imageManager.LoadProgressChanged += (current, total) =>
+            _imageManager.LoadProgressChanged += (current, total) =>
             {
                 Dispatcher.Invoke(() =>
                 {
@@ -88,7 +95,7 @@ public partial class MainWindow : Window
                 });
             };
 
-            imageManager.ImportProgressChanged += (current, total, errors) =>
+            _imageManager.ImportProgressChanged += (current, total, errors) =>
             {
                 Dispatcher.Invoke(() =>
                 {
@@ -99,53 +106,53 @@ public partial class MainWindow : Window
                 });
             };
 
-            imageManager.LogMessage += msg => debugLogger.Log(msg);
+            _imageManager.LogMessage += msg => _debugLogger.Log(msg);
 
             // ZoomController events
-            zoomController.ZoomChanged += level => indicatorManager.ShowZoom(zoomController.ZoomPercent);
-            zoomController.ZoomedIn += () => pauseController.Pause();
-            zoomController.ZoomedOut += () => pauseController.Resume();
-            zoomController.LogMessage += msg => debugLogger.Log(msg);
+            _zoomController.ZoomChanged += level => _indicatorManager.ShowZoom(_zoomController.ZoomPercent);
+            _zoomController.ZoomedIn += () => _pauseController.Pause();
+            _zoomController.ZoomedOut += () => _pauseController.Resume();
+            _zoomController.LogMessage += msg => _debugLogger.Log(msg);
 
             // MosaicManager events
-            mosaicManager.PaneCountChanged += paneCount =>
+            _mosaicManager.PaneCountChanged += paneCount =>
             {
-                ShowImage(currentIndex);
-                if (zoomController.IsZoomed)
+                ShowImage(_currentIndex);
+                if (_zoomController.IsZoomed)
                 {
-                    zoomController.ResetZoom();
+                    _zoomController.ResetZoom();
                 }
             };
-            mosaicManager.LogMessage += msg => debugLogger.Log(msg);
+            _mosaicManager.LogMessage += msg => _debugLogger.Log(msg);
 
             // SlideshowController events
-            slideshowController.Tick += OnSlideshowTick;
-            slideshowController.IntervalChanged += interval => indicatorManager.ShowSpeed(interval);
-            slideshowController.LogMessage += msg => debugLogger.Log(msg);
+            _slideshowController.Tick += OnSlideshowTick;
+            _slideshowController.IntervalChanged += interval => _indicatorManager.ShowSpeed(interval);
+            _slideshowController.LogMessage += msg => _debugLogger.Log(msg);
 
             // PauseController events
-            pauseController.Paused += () => slideshowController.Stop();
-            pauseController.Resumed += () => slideshowController.Start();
-            pauseController.LogMessage += msg => debugLogger.Log(msg);
+            _pauseController.Paused += () => _slideshowController.Stop();
+            _pauseController.Resumed += () => _slideshowController.Start();
+            _pauseController.LogMessage += msg => _debugLogger.Log(msg);
         }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         try
         {
-            Log.Information(Strings.SLog_WindowLoaded);
+            _logger.LogInformation(Strings.SLog_WindowLoaded);
             
             // Initialize UI references
-            debugLogger.Initialize(DebugConsole, LogTextBlock);
-            pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
-            indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
-            zoomController.Initialize(MosaicScaleTransform, MosaicTranslateTransform);
+            _debugLogger.Initialize(DebugConsole, LogTextBlock);
+            _pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
+            _indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
+            _zoomController.Initialize(MosaicScaleTransform, MosaicTranslateTransform);
 
-            debugLogger.Log(Strings.Status_ApplicationStarted);
-            Log.Debug(Strings.SLog_UIComponentsInitialized);
+            _debugLogger.Log(Strings.Status_ApplicationStarted);
+            _logger.LogDebug(Strings.SLog_UIComponentsInitialized);
 
             // Handle CLI arguments if provided
-            if (cliArgs != null && cliArgs.IsCliMode)
+            if (_cliArgs != null && _cliArgs.IsCliMode)
             {
                 await LoadFromCliArgumentsAsync();
                 return;
@@ -155,26 +162,26 @@ public partial class MainWindow : Window
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
 
-            Log.Information(Strings.SLog_StartingImageLoading);
-            await imageManager.LoadImagesAsync();
-            Log.Information(string.Format(Strings.SLog_ImageLoadingCompleted, imageManager.ImageCount));
+            _logger.LogInformation(Strings.SLog_StartingImageLoading);
+            await _imageManager.LoadImagesAsync();
+            _logger.LogInformation(string.Format(Strings.SLog_ImageLoadingCompleted, _imageManager.ImageCount));
 
-            if (imageManager.ImageCount > 0)
+            if (_imageManager.ImageCount > 0)
             {
                 // Shuffle images
                 ShuffleImages();
                 ShowImage(0);
-                slideshowController.Start();
+                _slideshowController.Start();
                 LoadingOverlay.Visibility = Visibility.Collapsed;
-                Log.Information(Strings.SLog_SlideshowStarted);
+                _logger.LogInformation(Strings.SLog_SlideshowStarted);
             }
             else
             {
-                string patternText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
+                var patternText = string.IsNullOrWhiteSpace(_imageManager.FolderPattern)
                     ? Strings.Pattern_AllSubdirectories
-                    : string.Format(Strings.Pattern_SpecificFolders, imageManager.FolderPattern);
+                    : string.Format(Strings.Pattern_SpecificFolders, _imageManager.FolderPattern);
                 LoadingText.Text = string.Format(Strings.Error_NoImages, patternText);
-                Log.Warning(Strings.SLog_NoImagesFoundInDirectory);
+                _logger.LogWarning(Strings.SLog_NoImagesFoundInDirectory);
                 
                 // Automatically show folder selection dialog
                 LoadingProgressStack.Visibility = Visibility.Collapsed;
@@ -183,7 +190,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Log.Error(ex, Strings.SLog_ErrorDuringWindowLoad);
+            _logger.LogError(ex, Strings.SLog_ErrorDuringWindowLoad);
             MessageBox.Show(string.Format(Strings.Error_LoadMessage, ex.Message), 
                 Strings.Error_LoadTitle, 
                 MessageBoxButton.OK, MessageBoxImage.Error);
@@ -194,24 +201,24 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (cliArgs == null || !cliArgs.IsCliMode)
+            if (_cliArgs == null || !_cliArgs.IsCliMode)
                 return;
 
-            Log.Information(Strings.SLog_LoadingFromCLI);
+            _logger.LogInformation(Strings.SLog_LoadingFromCLI);
 
             // Set folder pattern (empty string means all subdirectories)
-            imageManager.FolderPattern = cliArgs.FolderPattern ?? "";
+            _imageManager.FolderPattern = _cliArgs.FolderPattern ?? "";
             
             // Set pane count if specified
-            if (cliArgs.PaneCount.HasValue)
+            if (_cliArgs.PaneCount.HasValue)
             {
                 // Find the closest valid mosaic size
-                int targetPanes = cliArgs.PaneCount.Value;
+                var targetPanes = _cliArgs.PaneCount.Value;
                 int[] validSizes = { 1, 2, 4, 9, 16 };
                 
                 // Find the exact match or closest valid size
-                int closestSize = validSizes[0];
-                foreach (int size in validSizes)
+                var closestSize = validSizes[0];
+                foreach (var size in validSizes)
                 {
                     if (size == targetPanes)
                     {
@@ -225,62 +232,62 @@ public partial class MainWindow : Window
                 }
 
                 // Set the pane count by calling IncreasePanes/DecreasePanes
-                while (mosaicManager.PaneCount != closestSize)
+                while (_mosaicManager.PaneCount != closestSize)
                 {
-                    if (mosaicManager.PaneCount < closestSize)
-                        mosaicManager.IncreasePanes();
+                    if (_mosaicManager.PaneCount < closestSize)
+                        _mosaicManager.IncreasePanes();
                     else
-                        mosaicManager.DecreasePanes();
+                        _mosaicManager.DecreasePanes();
                 }
 
-                Log.Information(string.Format(Strings.SLog_SetPaneCount, mosaicManager.PaneCount));
+                _logger.LogInformation(string.Format(Strings.SLog_SetPaneCount, _mosaicManager.PaneCount));
             }
 
             // Set fullscreen mode if specified
-            if (cliArgs.Fullscreen)
+            if (_cliArgs.Fullscreen)
             {
                 // Note: We need to set fullscreen after the window is fully loaded
                 // So we'll do it after loading images
-                Log.Information(Strings.SLog_FullscreenModeWillBeActivated);
+                _logger.LogInformation(Strings.SLog_FullscreenModeWillBeActivated);
             }
 
             // Load images from specified directory
             LoadingOverlay.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
             
-            string patternText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
+            var patternText = string.IsNullOrWhiteSpace(_imageManager.FolderPattern)
                 ? Strings.Pattern_AllSubdirectories
-                : string.Format(Strings.Pattern_SpecificFolders, imageManager.FolderPattern);
+                : string.Format(Strings.Pattern_SpecificFolders, _imageManager.FolderPattern);
             LoadingText.Text = string.Format(Strings.Loading_ImagesFrom, patternText);
 
-            await imageManager.LoadImagesFromDirectoryAsync(cliArgs.RootDirectory!);
+            await _imageManager.LoadImagesFromDirectoryAsync(_cliArgs.RootDirectory!);
             
-            if (imageManager.ImageCount > 0)
+            if (_imageManager.ImageCount > 0)
             {
                 ShuffleImages();
                 ShowImage(0);
-                slideshowController.Start();
+                _slideshowController.Start();
                 LoadingOverlay.Visibility = Visibility.Collapsed;
                 
                 // Activate fullscreen mode if requested via CLI
-                if (cliArgs.Fullscreen)
+                if (_cliArgs.Fullscreen)
                 {
                     ToggleFullscreen();
-                    Log.Information(Strings.SLog_ActivatedFullscreenMode);
+                    _logger.LogInformation(Strings.SLog_ActivatedFullscreenMode);
                 }
                 
-                Log.Information(string.Format(Strings.SLog_CLIModeLoadedImages, imageManager.ImageCount));
+                _logger.LogInformation(string.Format(Strings.SLog_CLIModeLoadedImages, _imageManager.ImageCount));
             }
             else
             {
                 LoadingText.Text = string.Format(Strings.Error_NoImagesInPattern, patternText);
                 LoadingProgressStack.Visibility = Visibility.Collapsed;
-                Log.Warning(Strings.SLog_CLIModeNoImages);
+                _logger.LogWarning(Strings.SLog_CLIModeNoImages);
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, Strings.SLog_ErrorLoadingFromCLI);
+            _logger.LogError(ex, Strings.SLog_ErrorLoadingFromCLI);
             LoadingOverlay.Visibility = Visibility.Collapsed;
             MessageBox.Show(string.Format(Strings.Error_LoadImagesMessage, ex.Message), 
                 Strings.Error_LoadTitle, 
@@ -290,7 +297,7 @@ public partial class MainWindow : Window
         private void Window_MouseLeftButtonDown_Border(object sender, MouseButtonEventArgs e)
         {
             // Allow dragging window when not in fullscreen, not zoomed, and not near edges (for resizing)
-            if (!isFullscreen && !zoomController.IsZoomed && !IsNearEdge(e.GetPosition(this)))
+            if (!_isFullscreen && !_zoomController.IsZoomed && !IsNearEdge(e.GetPosition(this)))
             {
                 try
                 {
@@ -306,7 +313,7 @@ public partial class MainWindow : Window
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             // Update cursor based on position for resize indication
-            if (isFullscreen || zoomController.IsZoomed)
+            if (_isFullscreen || _zoomController.IsZoomed)
                 return;
 
             var position = e.GetPosition(this);
@@ -317,10 +324,10 @@ public partial class MainWindow : Window
         {
             const double resizeBorder = 5;
             
-            bool nearLeft = position.X <= resizeBorder;
-            bool nearRight = position.X >= ActualWidth - resizeBorder;
-            bool nearTop = position.Y <= resizeBorder;
-            bool nearBottom = position.Y >= ActualHeight - resizeBorder;
+            var nearLeft = position.X <= resizeBorder;
+            var nearRight = position.X >= ActualWidth - resizeBorder;
+            var nearTop = position.Y <= resizeBorder;
+            var nearBottom = position.Y >= ActualHeight - resizeBorder;
 
             return nearLeft || nearRight || nearTop || nearBottom;
         }
@@ -329,10 +336,10 @@ public partial class MainWindow : Window
         {
             const double resizeBorder = 5;
             
-            bool nearLeft = position.X <= resizeBorder;
-            bool nearRight = position.X >= ActualWidth - resizeBorder;
-            bool nearTop = position.Y <= resizeBorder;
-            bool nearBottom = position.Y >= ActualHeight - resizeBorder;
+            var nearLeft = position.X <= resizeBorder;
+            var nearRight = position.X >= ActualWidth - resizeBorder;
+            var nearTop = position.Y <= resizeBorder;
+            var nearBottom = position.Y >= ActualHeight - resizeBorder;
 
             // Set cursor based on position
             if ((nearLeft && nearTop) || (nearRight && nearBottom))
@@ -366,7 +373,7 @@ public partial class MainWindow : Window
         private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             // Update mosaic layout when window size changes (for orientation-aware 2-pane layout)
-            if (mosaicManager.PaneCount == 2 && imageManager.ImageCount > 0)
+            if (_mosaicManager.PaneCount == 2 && _imageManager.ImageCount > 0)
             {
                 UpdateMosaicLayout();
             }
@@ -374,22 +381,22 @@ public partial class MainWindow : Window
 
         private void OnSlideshowTick()
         {
-            currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.ImageCount;
-            mosaicManager.ResetPaneIndex();
-            _ = ShowImageAsync(currentIndex);
+            _currentIndex = (_currentIndex + _mosaicManager.PaneCount) % _imageManager.ImageCount;
+            _mosaicManager.ResetPaneIndex();
+            _ = ShowImageAsync(_currentIndex);
         }
 
         private async Task ShowImageAsync(int index)
         {
-            debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {imageManager.ImageCount}");
+            _debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {_imageManager.ImageCount}");
             
-            if (imageManager.ImageCount > 0 && index >= 0 && index < imageManager.ImageCount)
+            if (_imageManager.ImageCount > 0 && index >= 0 && index < _imageManager.ImageCount)
             {
                 // Get images to display (supports both lazy loading and legacy mode)
-                debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={mosaicManager.PaneCount})");
-                var imagesToShow = await imageManager.GetImagesAsync(index, mosaicManager.PaneCount);
+                _debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={_mosaicManager.PaneCount})");
+                var imagesToShow = await _imageManager.GetImagesAsync(index, _mosaicManager.PaneCount);
                 
-                debugLogger.Log($"[SHOW] GetImagesAsync returned {imagesToShow.Count} images");
+                _debugLogger.Log($"[SHOW] GetImagesAsync returned {imagesToShow.Count} images");
                 
                 if (imagesToShow.Count > 0)
                 {
@@ -398,14 +405,14 @@ public partial class MainWindow : Window
                     // Update the grid layout with window dimensions for orientation detection
                     UpdateMosaicLayout();
 
-                    var fileName = imageManager.GetImageFileName(index);
-                    string logMsg = $"Showing: {fileName}";
-                    if (mosaicManager.PaneCount > 1)
-                        logMsg += $" (+{mosaicManager.PaneCount - 1} more)";
-                    debugLogger.Log(logMsg);
+                    var fileName = _imageManager.GetImageFileName(index);
+                    var logMsg = $"Showing: {fileName}";
+                    if (_mosaicManager.PaneCount > 1)
+                        logMsg += $" (+{_mosaicManager.PaneCount - 1} more)";
+                    _debugLogger.Log(logMsg);
                     
                     // Preload next images in background for smooth playback (after displaying current images)
-                    _ = imageManager.PreloadImagesAsync(index, mosaicManager.PaneCount);
+                    _ = _imageManager.PreloadImagesAsync(index, _mosaicManager.PaneCount);
                 }
             }
         }
@@ -420,13 +427,13 @@ public partial class MainWindow : Window
             var itemsPanel = FindVisualChild<UniformGrid>(MosaicDisplay);
             if (itemsPanel != null)
             {
-                mosaicManager.UpdateGridLayout(itemsPanel, ActualWidth, ActualHeight);
+                _mosaicManager.UpdateGridLayout(itemsPanel, ActualWidth, ActualHeight);
             }
         }
 
         private void ShuffleImages()
         {
-            imageManager.Shuffle();
+            _imageManager.Shuffle();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -444,11 +451,11 @@ public partial class MainWindow : Window
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        imageManager.DeleteAllImages();
+                        _imageManager.DeleteAllImages();
                     }
                 }
 
-                debugLogger.Log("Application closing");
+                _debugLogger.Log("Application closing");
                 Application.Current.Shutdown();
                 return;
             }
@@ -456,7 +463,7 @@ public partial class MainWindow : Window
             // Check for Space or Enter to pause/resume
             if (e.Key == Key.Space || e.Key == Key.Enter)
             {
-                pauseController.Toggle();
+                _pauseController.Toggle();
                 return;
             }
 
@@ -477,42 +484,42 @@ public partial class MainWindow : Window
                     break;
 
                 case Key.D:
-                    debugLogger.Toggle();
+                    _debugLogger.Toggle();
                     break;
 
                 case Key.OemComma: // < key
                 case Key.OemPeriod: // > key
                     if (e.Key == Key.OemComma && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
                     {
-                        slideshowController.IncreaseSpeed();
-                        slideshowController.Restart();
-                        if (pauseController.IsPaused) slideshowController.Stop();
+                        _slideshowController.IncreaseSpeed();
+                        _slideshowController.Restart();
+                        if (_pauseController.IsPaused) _slideshowController.Stop();
                     }
                     else if (e.Key == Key.OemPeriod && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
                     {
-                        slideshowController.DecreaseSpeed();
-                        slideshowController.Restart();
-                        if (pauseController.IsPaused) slideshowController.Stop();
+                        _slideshowController.DecreaseSpeed();
+                        _slideshowController.Restart();
+                        if (_pauseController.IsPaused) _slideshowController.Stop();
                     }
                     break;
 
                 case Key.OemMinus:
                 case Key.OemPlus:
-                    if (!mosaicManager.IsMosaicMode)
+                    if (!_mosaicManager.IsMosaicMode)
                     {
                         if (e.Key == Key.OemMinus)
-                            zoomController.ZoomOut();
+                            _zoomController.ZoomOut();
                         else
-                            zoomController.ZoomIn();
+                            _zoomController.ZoomIn();
                     }
                     break;
 
                 case Key.M:
-                    mosaicManager.IncreasePanes();
+                    _mosaicManager.IncreasePanes();
                     break;
 
                 case Key.N:
-                    mosaicManager.DecreasePanes();
+                    _mosaicManager.DecreasePanes();
                     break;
 
                 case Key.I:
@@ -523,28 +530,34 @@ public partial class MainWindow : Window
 
         private void NavigateNext()
         {
-            debugLogger.Log($"[NAV] Next pressed - currentIndex: {currentIndex}, imageCount: {imageManager.ImageCount}, paneCount: {mosaicManager.PaneCount}");
-            slideshowController.Stop();
-            currentIndex = (currentIndex + mosaicManager.PaneCount) % imageManager.ImageCount;
-            debugLogger.Log($"[NAV] New currentIndex after Next: {currentIndex}");
-            mosaicManager.ResetPaneIndex();
-            ShowImage(currentIndex);
+            _logger.LogTrace("Navigate Next: currentIndex={CurrentIndex}, imageCount={ImageCount}, paneCount={PaneCount}", 
+                _currentIndex, _imageManager.ImageCount, _mosaicManager.PaneCount);
+            _debugLogger.Log($"[NAV] Next pressed - currentIndex: {_currentIndex}, imageCount: {_imageManager.ImageCount}, paneCount: {_mosaicManager.PaneCount}");
+            _slideshowController.Stop();
+            _currentIndex = (_currentIndex + _mosaicManager.PaneCount) % _imageManager.ImageCount;
+            _logger.LogTrace("New currentIndex after Next: {CurrentIndex}", _currentIndex);
+            _debugLogger.Log($"[NAV] New currentIndex after Next: {_currentIndex}");
+            _mosaicManager.ResetPaneIndex();
+            ShowImage(_currentIndex);
             FlashSide(true);
-            if (!pauseController.IsPaused)
-                slideshowController.Start();
+            if (!_pauseController.IsPaused)
+                _slideshowController.Start();
         }
 
         private void NavigatePrevious()
         {
-            debugLogger.Log($"[NAV] Previous pressed - currentIndex: {currentIndex}, imageCount: {imageManager.ImageCount}, paneCount: {mosaicManager.PaneCount}");
-            slideshowController.Stop();
-            currentIndex = (currentIndex - mosaicManager.PaneCount + imageManager.ImageCount) % imageManager.ImageCount;
-            debugLogger.Log($"[NAV] New currentIndex after Previous: {currentIndex}");
-            mosaicManager.ResetPaneIndex();
-            ShowImage(currentIndex);
+            _logger.LogTrace("Navigate Previous: currentIndex={CurrentIndex}, imageCount={ImageCount}, paneCount={PaneCount}", 
+                _currentIndex, _imageManager.ImageCount, _mosaicManager.PaneCount);
+            _debugLogger.Log($"[NAV] Previous pressed - currentIndex: {_currentIndex}, imageCount: {_imageManager.ImageCount}, paneCount: {_mosaicManager.PaneCount}");
+            _slideshowController.Stop();
+            _currentIndex = (_currentIndex - _mosaicManager.PaneCount + _imageManager.ImageCount) % _imageManager.ImageCount;
+            _logger.LogTrace("New currentIndex after Previous: {CurrentIndex}", _currentIndex);
+            _debugLogger.Log($"[NAV] New currentIndex after Previous: {_currentIndex}");
+            _mosaicManager.ResetPaneIndex();
+            ShowImage(_currentIndex);
             FlashSide(false);
-            if (!pauseController.IsPaused)
-                slideshowController.Start();
+            if (!_pauseController.IsPaused)
+                _slideshowController.Start();
         }
 
         private async void FlashSide(bool isRight)
@@ -552,7 +565,7 @@ public partial class MainWindow : Window
             var flash = isRight ? RightFlash : LeftFlash;
             flash.Opacity = 0.3;
 
-            for (int i = 3; i >= 0; i--)
+            for (var i = 3; i >= 0; i--)
             {
                 flash.Opacity = i * 0.1;
                 await System.Threading.Tasks.Task.Delay(10);
@@ -566,18 +579,18 @@ public partial class MainWindow : Window
             ImportProgressStack.Visibility = Visibility.Visible;
             LoadingProgressStack.Visibility = Visibility.Visible;
 
-            int imported = await imageManager.ImportImagesAsync();
+            var imported = await _imageManager.ImportImagesAsync();
 
             if (imported > 0)
             {
                 ImportProgressStack.Visibility = Visibility.Collapsed;
-                await imageManager.LoadImagesAsync();
+                await _imageManager.LoadImagesAsync();
                 
-                if (imageManager.ImageCount > 0)
+                if (_imageManager.ImageCount > 0)
                 {
                     ShuffleImages();
                     ShowImage(0);
-                    slideshowController.Start();
+                    _slideshowController.Start();
                 }
             }
 
@@ -588,18 +601,18 @@ public partial class MainWindow : Window
         {
             try
             {
-                Log.Information("Prompting for folder pattern");
+                _logger.LogInformation("Prompting for folder pattern");
                 
                 // First, ask for the folder pattern
                 var patternDialog = new InputDialog(
                     "Enter the folder name pattern to search for:",
                     "Folder Pattern",
-                    imageManager.FolderPattern);
+                    _imageManager.FolderPattern);
 
                 if (patternDialog.ShowDialog() != true)
                 {
-                    Log.Information("User cancelled pattern input");
-                    if (imageManager.ImageCount == 0)
+                    _logger.LogInformation("User cancelled pattern input");
+                    if (_imageManager.ImageCount == 0)
                     {
                         LoadingText.Text = "No pattern specified. Press I to select a directory.";
                         LoadingProgressStack.Visibility = Visibility.Collapsed;
@@ -607,18 +620,18 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                imageManager.FolderPattern = patternDialog.ResponseText;
+                _imageManager.FolderPattern = patternDialog.ResponseText;
                 
-                string patternLogText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
+                var patternLogText = string.IsNullOrWhiteSpace(_imageManager.FolderPattern)
                     ? "all subdirectories"
-                    : imageManager.FolderPattern;
-                Log.Information($"User set folder pattern to: {patternLogText}");
+                    : _imageManager.FolderPattern;
+                _logger.LogInformation($"User set folder pattern to: {patternLogText}");
                 
-                Log.Information("Opening folder selection dialog");
+                _logger.LogInformation("Opening folder selection dialog");
                 
-                string patternText = string.IsNullOrWhiteSpace(imageManager.FolderPattern)
+                var patternText = string.IsNullOrWhiteSpace(_imageManager.FolderPattern)
                     ? "all subdirectories"
-                    : $"'{imageManager.FolderPattern}' folders";
+                    : $"'{_imageManager.FolderPattern}' folders";
                 
                 var dialog = new System.Windows.Forms.FolderBrowserDialog
                 {
@@ -629,34 +642,34 @@ public partial class MainWindow : Window
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    string selectedPath = dialog.SelectedPath;
-                    Log.Information($"User selected directory: {selectedPath}");
+                    var selectedPath = dialog.SelectedPath;
+                    _logger.LogInformation($"User selected directory: {selectedPath}");
                     
                     LoadingOverlay.Visibility = Visibility.Visible;
                     LoadingText.Text = $"Searching for images in {patternText}...";
                     LoadingProgressStack.Visibility = Visibility.Visible;
 
-                    await imageManager.LoadImagesFromDirectoryAsync(selectedPath);
+                    await _imageManager.LoadImagesFromDirectoryAsync(selectedPath);
                     
-                    if (imageManager.ImageCount > 0)
+                    if (_imageManager.ImageCount > 0)
                     {
                         ShuffleImages();
                         ShowImage(0);
-                        slideshowController.Start();
+                        _slideshowController.Start();
                         LoadingOverlay.Visibility = Visibility.Collapsed;
-                        Log.Information($"Loaded {imageManager.ImageCount} images from selected directory");
+                        _logger.LogInformation($"Loaded {_imageManager.ImageCount} images from selected directory");
                     }
                     else
                     {
                         LoadingText.Text = $"No images found in {patternText}. Press I to try another directory.";
                         LoadingProgressStack.Visibility = Visibility.Collapsed;
-                        Log.Warning("No images found in selected directory");
+                        _logger.LogWarning("No images found in selected directory");
                     }
                 }
                 else
                 {
-                    Log.Information("User cancelled folder selection");
-                    if (imageManager.ImageCount == 0)
+                    _logger.LogInformation("User cancelled folder selection");
+                    if (_imageManager.ImageCount == 0)
                     {
                         LoadingText.Text = "No directory selected. Press I to select a directory.";
                         LoadingProgressStack.Visibility = Visibility.Collapsed;
@@ -665,7 +678,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error selecting directory");
+                _logger.LogError(ex, "Error selecting directory");
                 MessageBox.Show($"Error selecting directory:\n{ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 LoadingOverlay.Visibility = Visibility.Collapsed;
@@ -674,43 +687,43 @@ public partial class MainWindow : Window
 
         private void ToggleFullscreen()
         {
-            if (!isFullscreen)
+            if (!_isFullscreen)
             {
-                previousWindowState = WindowState;
-                previousWindowStyle = WindowStyle;
+                _previousWindowState = WindowState;
+                _previousWindowStyle = WindowStyle;
                 WindowStyle = WindowStyle.None;
                 WindowState = WindowState.Maximized;
-                isFullscreen = true;
+                _isFullscreen = true;
             }
             else
             {
-                WindowStyle = previousWindowStyle;
-                WindowState = previousWindowState;
-                isFullscreen = false;
+                WindowStyle = _previousWindowStyle;
+                WindowState = _previousWindowState;
+                _isFullscreen = false;
             }
         }
 
         // Zoom and Pan event handlers
         private void MosaicDisplay_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (!mosaicManager.IsMosaicMode)
+            if (!_mosaicManager.IsMosaicMode)
             {
-                zoomController.HandleMouseWheel(e);
+                _zoomController.HandleMouseWheel(e);
             }
         }
 
         private void MosaicDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (!mosaicManager.IsMosaicMode && zoomController.IsZoomed)
+            if (!_mosaicManager.IsMosaicMode && _zoomController.IsZoomed)
             {
-                zoomController.StartDrag(e.GetPosition(this));
+                _zoomController.StartDrag(e.GetPosition(this));
                 MosaicDisplay.CaptureMouse();
             }
         }
 
         private void MosaicDisplay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            zoomController.EndDrag();
+            _zoomController.EndDrag();
             MosaicDisplay.ReleaseMouseCapture();
         }
 
@@ -718,13 +731,13 @@ public partial class MainWindow : Window
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                zoomController.UpdateDrag(e.GetPosition(this));
+                _zoomController.UpdateDrag(e.GetPosition(this));
             }
         }
 
         private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
             if (child is T typedChild)
@@ -737,3 +750,4 @@ public partial class MainWindow : Window
         return null;
     }
 }
+

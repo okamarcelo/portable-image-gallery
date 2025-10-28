@@ -14,79 +14,54 @@ namespace ImageGallery.Services;
 /// </summary>
 public class DebugLogger : IDisposable
 {
-    private readonly StringBuilder logBuilder = new StringBuilder();
-    private Border? consoleContainer;
-    private TextBox? logTextBox;
-    private StreamWriter? logFileWriter;
-    private readonly string logFilePath;
+    private readonly StringBuilder _logBuilder = new StringBuilder();
+    private Border? _consoleContainer;
+    private TextBox? _logTextBox;
     private const int MaxLogLength = 100000; // Limit log to 100KB to prevent crashes
 
     public bool IsVisible { get; private set; } = false;
 
     public DebugLogger()
     {
-        // Write log directly to current directory
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        logFilePath = $"imagegallery_{timestamp}.log";
-        
-        try
-        {
-            logFileWriter = new StreamWriter(logFilePath, append: true) { AutoFlush = true };
-            LogToFile($"=== Log started at {DateTime.Now} ===");
-            LogToFile($"Log file: {Path.GetFullPath(logFilePath)}");
-        }
-        catch (Exception ex)
-        {
-            // Try to log the error somewhere
-            try
-            {
-                File.WriteAllText("error.txt", $"Failed to create log: {ex.Message}");
-            }
-            catch
-            {
-            }
-        }
+        // No file logging - Serilog will handle that
     }
 
     public void Initialize(Border console, TextBox textBox)
     {
-        consoleContainer = console;
-        logTextBox = textBox;
+        _consoleContainer = console;
+        _logTextBox = textBox;
     }
 
     public void Log(string message)
     {
         try
         {
-            string timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
-            
-            // Write to file first (most important)
-            LogToFile(timestampedMessage);
+            var timestampedMessage = string.Format(Strings.Log_Timestamp, DateTime.Now, message);
             
             // Add to in-memory log with size limit
-            logBuilder.AppendLine(timestampedMessage);
+            _logBuilder.AppendLine(timestampedMessage);
             
             // Trim log if too large (keep last 50KB)
-            if (logBuilder.Length > MaxLogLength)
+            if (_logBuilder.Length > MaxLogLength)
             {
-                var text = logBuilder.ToString();
+                var text = _logBuilder.ToString();
                 var keepFrom = text.Length - (MaxLogLength / 2);
-                logBuilder.Clear();
-                logBuilder.AppendLine("... [earlier logs truncated] ...");
-                logBuilder.Append(text.Substring(keepFrom));
+                _logBuilder.Clear();
+                _logBuilder.AppendLine("... [earlier logs truncated] ...");
+                _logBuilder.Append(text.Substring(keepFrom));
             }
             
             // Update UI
-            if (logTextBox != null)
+            if (_logTextBox != null)
             {
                 // Ensure we're on the UI thread
-                if (logTextBox.Dispatcher.CheckAccess())
+                if (_logTextBox.Dispatcher.CheckAccess())
                 {
                     UpdateLogTextBox();
                 }
                 else
                 {
-                    logTextBox.Dispatcher.InvokeAsync(() => UpdateLogTextBox());
+                    _logTextBox.Dispatcher.InvokeAsync(() => UpdateLogTextBox());
                 }
             }
         }
@@ -109,9 +84,9 @@ public class DebugLogger : IDisposable
     {
         try
         {
-            if (logTextBox != null)
+            if (_logTextBox != null)
             {
-                logTextBox.Text = logBuilder.ToString();
+                _logTextBox.Text = _logBuilder.ToString();
                 AutoScrollToBottom();
             }
         }
@@ -121,25 +96,13 @@ public class DebugLogger : IDisposable
         }
     }
 
-    private void LogToFile(string message)
-    {
-        try
-        {
-            logFileWriter?.WriteLine(message);
-        }
-        catch
-        {
-            // Ignore file logging errors
-        }
-    }
-
     public void Toggle()
     {
         IsVisible = !IsVisible;
         
-        if (consoleContainer != null)
+        if (_consoleContainer != null)
         {
-            consoleContainer.Visibility = IsVisible ? Visibility.Visible : Visibility.Collapsed;
+            _consoleContainer.Visibility = IsVisible ? Visibility.Visible : Visibility.Collapsed;
         }
 
         Log(IsVisible ? Strings.Status_DebugConsoleShown : Strings.Status_DebugConsoleHidden);
@@ -147,16 +110,16 @@ public class DebugLogger : IDisposable
 
     private void AutoScrollToBottom()
     {
-        if (consoleContainer?.Visibility == Visibility.Visible && logTextBox != null)
+        if (_consoleContainer?.Visibility == Visibility.Visible && _logTextBox != null)
         {
-            var scrollViewer = FindVisualChild<ScrollViewer>(consoleContainer);
+            var scrollViewer = FindVisualChild<ScrollViewer>(_consoleContainer);
             scrollViewer?.ScrollToEnd();
         }
     }
 
     private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
     {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
             if (child is T typedChild)
@@ -171,15 +134,6 @@ public class DebugLogger : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            LogToFile($"=== Log ended at {DateTime.Now} ===");
-            logFileWriter?.Flush();
-            logFileWriter?.Dispose();
-        }
-        catch
-        {
-            // Ignore
-        }
+        // No resources to dispose now that file logging is handled by Serilog
     }
 }
