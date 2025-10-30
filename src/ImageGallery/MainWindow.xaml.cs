@@ -463,6 +463,11 @@ public partial class MainWindow : Window
             // Check for Space or Enter to pause/resume
             if (e.Key == Key.Space || e.Key == Key.Enter)
             {
+                // If we're paused and zoomed in, reset zoom when resuming
+                if (_pauseController.IsPaused && _zoomController.IsZoomed)
+                {
+                    _zoomController.ResetZoom();
+                }
                 _pauseController.Toggle();
                 return;
             }
