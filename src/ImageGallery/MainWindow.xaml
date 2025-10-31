@@ -5,6 +5,7 @@
         Title="{x:Static resx:Strings.MainWindow_Title}" 
         Height="600" 
         Width="800"
+        Icon="Resources/Icons/app-icon.ico"
         WindowStyle="None"
         AllowsTransparency="True"
         ResizeMode="CanResizeWithGrip"

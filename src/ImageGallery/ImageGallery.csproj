@@ -23,6 +23,7 @@
     <Company>okamarcelo</Company>
     <Copyright>Copyright (c) 2025</Copyright>
     <Description>A lightweight, portable image gallery application with slideshow capabilities</Description>
+    <ApplicationIcon>Resources\Icons\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,6 +34,13 @@
     <EmbeddedResource Update="Resources\Strings.pt-BR.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icons\app-icon.ico" />
+    <Content Include="Resources\Icons\app-icon.svg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
