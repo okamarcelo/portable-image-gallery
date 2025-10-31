@@ -146,6 +146,7 @@ public partial class App : Application
         services.AddSingleton<SlideshowController>();
         services.AddSingleton<PauseController>();
         services.AddSingleton<IndicatorManager>();
+        services.AddSingleton<KeyboardCommandService>();
         
         // Add MainWindow as transient (created per request)
         services.AddTransient<MainWindow>();

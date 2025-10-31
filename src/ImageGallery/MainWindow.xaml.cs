@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         private readonly PauseController _pauseController;
         private readonly DebugLogger _debugLogger;
         private readonly IndicatorManager _indicatorManager;
+        private readonly KeyboardCommandService _keyboardCommandService;
 
         // UI state
         private int _currentIndex = 0;
@@ -42,7 +43,8 @@ public partial class MainWindow : Window
         SlideshowController slideshowController,
         PauseController pauseController,
         DebugLogger debugLogger,
-        IndicatorManager indicatorManager)
+        IndicatorManager indicatorManager,
+        KeyboardCommandService keyboardCommandService)
     {
         try
         {
@@ -54,6 +56,7 @@ public partial class MainWindow : Window
             this._pauseController = pauseController;
             this._debugLogger = debugLogger;
             this._indicatorManager = indicatorManager;
+            this._keyboardCommandService = keyboardCommandService;
             
             _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
@@ -134,6 +137,12 @@ public partial class MainWindow : Window
             _pauseController.Paused += () => _slideshowController.Stop();
             _pauseController.Resumed += () => _slideshowController.Start();
             _pauseController.LogMessage += msg => _debugLogger.Log(msg);
+
+            // KeyboardCommandService events
+            _keyboardCommandService.NavigateNextRequested += NavigateNext;
+            _keyboardCommandService.NavigatePreviousRequested += NavigatePrevious;
+            _keyboardCommandService.ToggleFullscreenRequested += ToggleFullscreen;
+            _keyboardCommandService.SelectDirectoryRequested += () => _ = SelectRootDirectoryAsync();
         }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -438,99 +447,9 @@ public partial class MainWindow : Window
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            // Check for Ctrl+W or Ctrl+Q to close
-            if ((e.Key == Key.W || e.Key == Key.Q) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-            {
-                if (e.Key == Key.Q)
-                {
-                    var result = MessageBox.Show(
-                        "Do you want to delete all image files in this directory?",
-                        "Delete Images",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        _imageManager.DeleteAllImages();
-                    }
-                }
-
-                _debugLogger.Log("Application closing");
-                Application.Current.Shutdown();
-                return;
-            }
-
-            // Check for Space or Enter to pause/resume
-            if (e.Key == Key.Space || e.Key == Key.Enter)
-            {
-                // If we're paused and zoomed in, reset zoom when resuming
-                if (_pauseController.IsPaused && _zoomController.IsZoomed)
-                {
-                    _zoomController.ResetZoom();
-                }
-                _pauseController.Toggle();
-                return;
-            }
-
-            switch (e.Key)
-            {
-                case Key.Up:
-                case Key.Right:
-                    NavigateNext();
-                    break;
-
-                case Key.Down:
-                case Key.Left:
-                    NavigatePrevious();
-                    break;
-
-                case Key.F:
-                    ToggleFullscreen();
-                    break;
-
-                case Key.D:
-                    _debugLogger.Toggle();
-                    break;
-
-                case Key.OemComma: // < key
-                case Key.OemPeriod: // > key
-                    if (e.Key == Key.OemComma && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
-                    {
-                        _slideshowController.IncreaseSpeed();
-                        _slideshowController.Restart();
-                        if (_pauseController.IsPaused) _slideshowController.Stop();
-                    }
-                    else if (e.Key == Key.OemPeriod && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
-                    {
-                        _slideshowController.DecreaseSpeed();
-                        _slideshowController.Restart();
-                        if (_pauseController.IsPaused) _slideshowController.Stop();
-                    }
-                    break;
-
-                case Key.OemMinus:
-                case Key.OemPlus:
-                    if (!_mosaicManager.IsMosaicMode)
-                    {
-                        if (e.Key == Key.OemMinus)
-                            _zoomController.ZoomOut();
-                        else
-                            _zoomController.ZoomIn();
-                    }
-                    break;
-
-                case Key.M:
-                    _mosaicManager.IncreasePanes();
-                    break;
-
-                case Key.N:
-                    _mosaicManager.DecreasePanes();
-                    break;
-
-                case Key.I:
-                    _ = SelectRootDirectoryAsync();
-                    break;
-            }
+            // Delegate keyboard handling to the KeyboardCommandService
+            var handled = _keyboardCommandService.HandleKeyDown(e);
+            e.Handled = handled;
         }
 
         private void NavigateNext()
