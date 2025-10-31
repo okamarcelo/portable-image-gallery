@@ -30,6 +30,7 @@ public partial class MainWindow : Window
         private readonly WindowStateService _windowStateService;
         private readonly ImageLoaderService _imageLoaderService;
         private readonly NavigationService _navigationService;
+        private readonly DisplayService _displayService;
 
         // UI state
         // _currentIndex is now managed by NavigationService
@@ -47,7 +48,8 @@ public partial class MainWindow : Window
         KeyboardCommandService keyboardCommandService,
         WindowStateService windowStateService,
         ImageLoaderService imageLoaderService,
-        NavigationService navigationService)
+        NavigationService navigationService,
+        DisplayService displayService)
     {
         try
         {
@@ -63,6 +65,7 @@ public partial class MainWindow : Window
             this._windowStateService = windowStateService;
             this._imageLoaderService = imageLoaderService;
             this._navigationService = navigationService;
+            this._displayService = displayService;
             
             _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
@@ -169,8 +172,13 @@ public partial class MainWindow : Window
             // NavigationService events
             _navigationService.ImagesDisplayRequested += images => 
                 Dispatcher.Invoke(() => MosaicDisplay.ItemsSource = images);
-            _navigationService.MosaicLayoutUpdateRequested += UpdateMosaicLayout;
-            _navigationService.FlashSideRequested += FlashSide;
+            _navigationService.MosaicLayoutUpdateRequested += () => 
+                _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
+            _navigationService.FlashSideRequested += isRight => 
+                _ = _displayService.FlashSideAsync(isRight, RightFlash, LeftFlash);
+
+            // DisplayService events
+            _displayService.LogMessageRequested += msg => _debugLogger.Log(msg);
         }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -259,7 +267,7 @@ public partial class MainWindow : Window
             // Update mosaic layout when window size changes (for orientation-aware 2-pane layout)
             if (_mosaicManager.PaneCount == 2 && _imageManager.ImageCount > 0)
             {
-                UpdateMosaicLayout();
+                _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
             }
         }
 
@@ -267,14 +275,7 @@ public partial class MainWindow : Window
 
         // ShowImage and ShowImageAsync are now handled by NavigationService
 
-        private void UpdateMosaicLayout()
-        {
-            var itemsPanel = FindVisualChild<UniformGrid>(MosaicDisplay);
-            if (itemsPanel != null)
-            {
-                _mosaicManager.UpdateGridLayout(itemsPanel, ActualWidth, ActualHeight);
-            }
-        }
+        // UpdateMosaicLayout is now handled by DisplayService
 
         private void ShuffleImages()
         {
@@ -290,17 +291,7 @@ public partial class MainWindow : Window
 
         // NavigateNext and NavigatePrevious are now handled by NavigationService
 
-        private async void FlashSide(bool isRight)
-        {
-            var flash = isRight ? RightFlash : LeftFlash;
-            flash.Opacity = 0.3;
-
-            for (var i = 3; i >= 0; i--)
-            {
-                flash.Opacity = i * 0.1;
-                await System.Threading.Tasks.Task.Delay(10);
-            }
-        }
+        // FlashSide is now handled by DisplayService
 
 
 
@@ -308,51 +299,27 @@ public partial class MainWindow : Window
 
 
 
-        // Zoom and Pan event handlers
+        // Zoom and Pan event handlers - delegated to DisplayService
         private void MosaicDisplay_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (!_mosaicManager.IsMosaicMode)
-            {
-                _zoomController.HandleMouseWheel(e);
-            }
+            _displayService.HandleMouseWheel(e);
         }
 
         private void MosaicDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (!_mosaicManager.IsMosaicMode && _zoomController.IsZoomed)
-            {
-                _zoomController.StartDrag(e.GetPosition(this));
-                MosaicDisplay.CaptureMouse();
-            }
+            _displayService.HandleMouseLeftButtonDown(e, this, sender);
         }
 
         private void MosaicDisplay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            _zoomController.EndDrag();
-            MosaicDisplay.ReleaseMouseCapture();
+            _displayService.HandleMouseLeftButtonUp(sender);
         }
 
         private void MosaicDisplay_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                _zoomController.UpdateDrag(e.GetPosition(this));
-            }
+            _displayService.HandleMouseMove(e, this);
         }
 
-        private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is T typedChild)
-                return typedChild;
-
-            var result = FindVisualChild<T>(child);
-            if (result != null)
-                return result;
-        }
-        return null;
-    }
+        // FindVisualChild is now handled by DisplayService
 }
 
