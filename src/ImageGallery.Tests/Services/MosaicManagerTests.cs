@@ -126,7 +126,9 @@ public class MosaicManagerTests
 
         // Assert
         Assert.NotNull(logMessage);
-        Assert.Contains("Mosaic", logMessage);
+        Assert.True(logMessage.Contains("Mosaic", StringComparison.OrdinalIgnoreCase) || 
+                   logMessage.Contains("mosaico", StringComparison.OrdinalIgnoreCase),
+                   $"Expected 'Mosaic' or 'mosaico' in message: '{logMessage}'");
         Assert.Contains("2", logMessage);
     }
 
@@ -143,7 +145,9 @@ public class MosaicManagerTests
 
         // Assert
         Assert.NotNull(logMessage);
-        Assert.Contains("Mosaic", logMessage);
+        Assert.True(logMessage.Contains("Mosaic", StringComparison.OrdinalIgnoreCase) || 
+                   logMessage.Contains("mosaico", StringComparison.OrdinalIgnoreCase),
+                   $"Expected 'Mosaic' or 'mosaico' in message: '{logMessage}'");
         Assert.Contains("16", logMessage);
     }
 

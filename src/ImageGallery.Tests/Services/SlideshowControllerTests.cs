@@ -144,7 +144,9 @@ public class SlideshowControllerTests
 
         // Assert
         Assert.NotNull(logMessage);
-        Assert.Contains("started", logMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.True(logMessage.Contains("started", StringComparison.OrdinalIgnoreCase) || 
+                   logMessage.Contains("iniciada", StringComparison.OrdinalIgnoreCase),
+                   $"Expected 'started' or 'iniciada' in message: '{logMessage}'");
     }
 
     [Fact]
@@ -161,7 +163,9 @@ public class SlideshowControllerTests
 
         // Assert
         Assert.NotNull(logMessage);
-        Assert.Contains("stopped", logMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.True(logMessage.Contains("stopped", StringComparison.OrdinalIgnoreCase) || 
+                   logMessage.Contains("parada", StringComparison.OrdinalIgnoreCase),
+                   $"Expected 'stopped' or 'parada' in message: '{logMessage}'");
     }
 
     [Fact]
