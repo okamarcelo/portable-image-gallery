@@ -148,6 +148,7 @@ public partial class App : Application
         services.AddSingleton<IndicatorManager>();
         services.AddSingleton<KeyboardCommandService>();
         services.AddSingleton<WindowStateService>();
+        services.AddSingleton<ImageLoaderService>();
         
         // Add MainWindow as transient (created per request)
         services.AddTransient<MainWindow>();
