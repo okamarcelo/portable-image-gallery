@@ -29,9 +29,10 @@ public partial class MainWindow : Window
         private readonly KeyboardCommandService _keyboardCommandService;
         private readonly WindowStateService _windowStateService;
         private readonly ImageLoaderService _imageLoaderService;
+        private readonly NavigationService _navigationService;
 
         // UI state
-        private int _currentIndex = 0;
+        // _currentIndex is now managed by NavigationService
         private CommandLineArguments? _cliArgs;
 
     public MainWindow(
@@ -45,7 +46,8 @@ public partial class MainWindow : Window
         IndicatorManager indicatorManager,
         KeyboardCommandService keyboardCommandService,
         WindowStateService windowStateService,
-        ImageLoaderService imageLoaderService)
+        ImageLoaderService imageLoaderService,
+        NavigationService navigationService)
     {
         try
         {
@@ -60,6 +62,7 @@ public partial class MainWindow : Window
             this._keyboardCommandService = keyboardCommandService;
             this._windowStateService = windowStateService;
             this._imageLoaderService = imageLoaderService;
+            this._navigationService = navigationService;
             
             _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
@@ -123,7 +126,7 @@ public partial class MainWindow : Window
             // MosaicManager events
             _mosaicManager.PaneCountChanged += paneCount =>
             {
-                ShowImage(_currentIndex);
+                _navigationService.ShowImage(_navigationService.CurrentIndex);
                 if (_zoomController.IsZoomed)
                 {
                     _zoomController.ResetZoom();
@@ -132,7 +135,7 @@ public partial class MainWindow : Window
             _mosaicManager.LogMessage += msg => _debugLogger.Log(msg);
 
             // SlideshowController events
-            _slideshowController.Tick += OnSlideshowTick;
+            _slideshowController.Tick += _navigationService.OnSlideshowTick;
             _slideshowController.IntervalChanged += interval => _indicatorManager.ShowSpeed(interval);
             _slideshowController.LogMessage += msg => _debugLogger.Log(msg);
 
@@ -142,8 +145,8 @@ public partial class MainWindow : Window
             _pauseController.LogMessage += msg => _debugLogger.Log(msg);
 
             // KeyboardCommandService events
-            _keyboardCommandService.NavigateNextRequested += NavigateNext;
-            _keyboardCommandService.NavigatePreviousRequested += NavigatePrevious;
+            _keyboardCommandService.NavigateNextRequested += _navigationService.NavigateNext;
+            _keyboardCommandService.NavigatePreviousRequested += _navigationService.NavigatePrevious;
             _keyboardCommandService.ToggleFullscreenRequested += _windowStateService.ToggleFullscreen;
             _keyboardCommandService.SelectDirectoryRequested += () => _ = _imageLoaderService.SelectRootDirectoryAsync();
 
@@ -160,8 +163,14 @@ public partial class MainWindow : Window
             _imageLoaderService.LoadingTextChanged += text => 
                 Dispatcher.Invoke(() => LoadingText.Text = text);
             _imageLoaderService.ShuffleImagesRequested += ShuffleImages;
-            _imageLoaderService.ShowImageRequested += ShowImage;
+            _imageLoaderService.ShowImageRequested += _navigationService.ShowImage;
             _imageLoaderService.SlideshowStartRequested += () => _slideshowController.Start();
+
+            // NavigationService events
+            _navigationService.ImagesDisplayRequested += images => 
+                Dispatcher.Invoke(() => MosaicDisplay.ItemsSource = images);
+            _navigationService.MosaicLayoutUpdateRequested += UpdateMosaicLayout;
+            _navigationService.FlashSideRequested += FlashSide;
         }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -199,7 +208,7 @@ public partial class MainWindow : Window
             {
                 // Shuffle images
                 ShuffleImages();
-                ShowImage(0);
+                _navigationService.ShowImage(0);
                 _slideshowController.Start();
                 LoadingOverlay.Visibility = Visibility.Collapsed;
                 _logger.LogInformation(Strings.SLog_SlideshowStarted);
@@ -254,48 +263,9 @@ public partial class MainWindow : Window
             }
         }
 
-        private void OnSlideshowTick()
-        {
-            _currentIndex = (_currentIndex + _mosaicManager.PaneCount) % _imageManager.ImageCount;
-            _mosaicManager.ResetPaneIndex();
-            _ = ShowImageAsync(_currentIndex);
-        }
+        // OnSlideshowTick is now handled by NavigationService
 
-        private async Task ShowImageAsync(int index)
-        {
-            _debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {_imageManager.ImageCount}");
-            
-            if (_imageManager.ImageCount > 0 && index >= 0 && index < _imageManager.ImageCount)
-            {
-                // Get images to display (supports both lazy loading and legacy mode)
-                _debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={_mosaicManager.PaneCount})");
-                var imagesToShow = await _imageManager.GetImagesAsync(index, _mosaicManager.PaneCount);
-                
-                _debugLogger.Log($"[SHOW] GetImagesAsync returned {imagesToShow.Count} images");
-                
-                if (imagesToShow.Count > 0)
-                {
-                    MosaicDisplay.ItemsSource = imagesToShow;
-
-                    // Update the grid layout with window dimensions for orientation detection
-                    UpdateMosaicLayout();
-
-                    var fileName = _imageManager.GetImageFileName(index);
-                    var logMsg = $"Showing: {fileName}";
-                    if (_mosaicManager.PaneCount > 1)
-                        logMsg += $" (+{_mosaicManager.PaneCount - 1} more)";
-                    _debugLogger.Log(logMsg);
-                    
-                    // Preload next images in background for smooth playback (after displaying current images)
-                    _ = _imageManager.PreloadImagesAsync(index, _mosaicManager.PaneCount);
-                }
-            }
-        }
-
-        private void ShowImage(int index)
-        {
-            _ = ShowImageAsync(index);
-        }
+        // ShowImage and ShowImageAsync are now handled by NavigationService
 
         private void UpdateMosaicLayout()
         {
@@ -318,37 +288,7 @@ public partial class MainWindow : Window
             e.Handled = handled;
         }
 
-        private void NavigateNext()
-        {
-            _logger.LogTrace("Navigate Next: currentIndex={CurrentIndex}, imageCount={ImageCount}, paneCount={PaneCount}", 
-                _currentIndex, _imageManager.ImageCount, _mosaicManager.PaneCount);
-            _debugLogger.Log($"[NAV] Next pressed - currentIndex: {_currentIndex}, imageCount: {_imageManager.ImageCount}, paneCount: {_mosaicManager.PaneCount}");
-            _slideshowController.Stop();
-            _currentIndex = (_currentIndex + _mosaicManager.PaneCount) % _imageManager.ImageCount;
-            _logger.LogTrace("New currentIndex after Next: {CurrentIndex}", _currentIndex);
-            _debugLogger.Log($"[NAV] New currentIndex after Next: {_currentIndex}");
-            _mosaicManager.ResetPaneIndex();
-            ShowImage(_currentIndex);
-            FlashSide(true);
-            if (!_pauseController.IsPaused)
-                _slideshowController.Start();
-        }
-
-        private void NavigatePrevious()
-        {
-            _logger.LogTrace("Navigate Previous: currentIndex={CurrentIndex}, imageCount={ImageCount}, paneCount={PaneCount}", 
-                _currentIndex, _imageManager.ImageCount, _mosaicManager.PaneCount);
-            _debugLogger.Log($"[NAV] Previous pressed - currentIndex: {_currentIndex}, imageCount: {_imageManager.ImageCount}, paneCount: {_mosaicManager.PaneCount}");
-            _slideshowController.Stop();
-            _currentIndex = (_currentIndex - _mosaicManager.PaneCount + _imageManager.ImageCount) % _imageManager.ImageCount;
-            _logger.LogTrace("New currentIndex after Previous: {CurrentIndex}", _currentIndex);
-            _debugLogger.Log($"[NAV] New currentIndex after Previous: {_currentIndex}");
-            _mosaicManager.ResetPaneIndex();
-            ShowImage(_currentIndex);
-            FlashSide(false);
-            if (!_pauseController.IsPaused)
-                _slideshowController.Start();
-        }
+        // NavigateNext and NavigatePrevious are now handled by NavigationService
 
         private async void FlashSide(bool isRight)
         {
