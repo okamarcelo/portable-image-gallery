@@ -27,12 +27,10 @@ public partial class MainWindow : Window
         private readonly DebugLogger _debugLogger;
         private readonly IndicatorManager _indicatorManager;
         private readonly KeyboardCommandService _keyboardCommandService;
+        private readonly WindowStateService _windowStateService;
 
         // UI state
         private int _currentIndex = 0;
-        private bool _isFullscreen = false;
-        private WindowState _previousWindowState;
-        private WindowStyle _previousWindowStyle;
         private CommandLineArguments? _cliArgs;
 
     public MainWindow(
@@ -44,7 +42,8 @@ public partial class MainWindow : Window
         PauseController pauseController,
         DebugLogger debugLogger,
         IndicatorManager indicatorManager,
-        KeyboardCommandService keyboardCommandService)
+        KeyboardCommandService keyboardCommandService,
+        WindowStateService windowStateService)
     {
         try
         {
@@ -57,6 +56,7 @@ public partial class MainWindow : Window
             this._debugLogger = debugLogger;
             this._indicatorManager = indicatorManager;
             this._keyboardCommandService = keyboardCommandService;
+            this._windowStateService = windowStateService;
             
             _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
@@ -141,8 +141,11 @@ public partial class MainWindow : Window
             // KeyboardCommandService events
             _keyboardCommandService.NavigateNextRequested += NavigateNext;
             _keyboardCommandService.NavigatePreviousRequested += NavigatePrevious;
-            _keyboardCommandService.ToggleFullscreenRequested += ToggleFullscreen;
+            _keyboardCommandService.ToggleFullscreenRequested += _windowStateService.ToggleFullscreen;
             _keyboardCommandService.SelectDirectoryRequested += () => _ = SelectRootDirectoryAsync();
+
+            // WindowStateService events
+            _windowStateService.LogMessage += msg => _debugLogger.Log(msg);
         }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -156,6 +159,7 @@ public partial class MainWindow : Window
             _pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
             _indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
             _zoomController.Initialize(MosaicScaleTransform, MosaicTranslateTransform);
+            _windowStateService.Initialize(this);
 
             _debugLogger.Log(Strings.Status_ApplicationStarted);
             _logger.LogDebug(Strings.SLog_UIComponentsInitialized);
@@ -281,7 +285,7 @@ public partial class MainWindow : Window
                 // Activate fullscreen mode if requested via CLI
                 if (_cliArgs.Fullscreen)
                 {
-                    ToggleFullscreen();
+                    _windowStateService.ToggleFullscreen();
                     _logger.LogInformation(Strings.SLog_ActivatedFullscreenMode);
                 }
                 
@@ -305,73 +309,15 @@ public partial class MainWindow : Window
     }        
         private void Window_MouseLeftButtonDown_Border(object sender, MouseButtonEventArgs e)
         {
-            // Allow dragging window when not in fullscreen, not zoomed, and not near edges (for resizing)
-            if (!_isFullscreen && !_zoomController.IsZoomed && !IsNearEdge(e.GetPosition(this)))
-            {
-                try
-                {
-                    this.DragMove();
-                }
-                catch
-                {
-                    // Ignore exceptions when dragging
-                }
-            }
+            _windowStateService.HandleMouseLeftButtonDown(e.GetPosition(this));
         }
 
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
-            // Update cursor based on position for resize indication
-            if (_isFullscreen || _zoomController.IsZoomed)
-                return;
-
-            var position = e.GetPosition(this);
-            UpdateCursorForResize(position);
+            _windowStateService.HandleMouseMove(e.GetPosition(this));
         }
 
-        private bool IsNearEdge(Point position)
-        {
-            const double resizeBorder = 5;
-            
-            var nearLeft = position.X <= resizeBorder;
-            var nearRight = position.X >= ActualWidth - resizeBorder;
-            var nearTop = position.Y <= resizeBorder;
-            var nearBottom = position.Y >= ActualHeight - resizeBorder;
 
-            return nearLeft || nearRight || nearTop || nearBottom;
-        }
-
-        private void UpdateCursorForResize(Point position)
-        {
-            const double resizeBorder = 5;
-            
-            var nearLeft = position.X <= resizeBorder;
-            var nearRight = position.X >= ActualWidth - resizeBorder;
-            var nearTop = position.Y <= resizeBorder;
-            var nearBottom = position.Y >= ActualHeight - resizeBorder;
-
-            // Set cursor based on position
-            if ((nearLeft && nearTop) || (nearRight && nearBottom))
-            {
-                Cursor = Cursors.SizeNWSE;
-            }
-            else if ((nearLeft && nearBottom) || (nearRight && nearTop))
-            {
-                Cursor = Cursors.SizeNESW;
-            }
-            else if (nearLeft || nearRight)
-            {
-                Cursor = Cursors.SizeWE;
-            }
-            else if (nearTop || nearBottom)
-            {
-                Cursor = Cursors.SizeNS;
-            }
-            else
-            {
-                Cursor = Cursors.Arrow;
-            }
-        }
 
         private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -609,23 +555,7 @@ public partial class MainWindow : Window
             }
         }
 
-        private void ToggleFullscreen()
-        {
-            if (!_isFullscreen)
-            {
-                _previousWindowState = WindowState;
-                _previousWindowStyle = WindowStyle;
-                WindowStyle = WindowStyle.None;
-                WindowState = WindowState.Maximized;
-                _isFullscreen = true;
-            }
-            else
-            {
-                WindowStyle = _previousWindowStyle;
-                WindowState = _previousWindowState;
-                _isFullscreen = false;
-            }
-        }
+
 
         // Zoom and Pan event handlers
         private void MosaicDisplay_MouseWheel(object sender, MouseWheelEventArgs e)
