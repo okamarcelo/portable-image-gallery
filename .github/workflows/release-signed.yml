@@ -1,0 +1,257 @@
+name: Release with Code Signing
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write  # Required for SignPath
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    runs-on: windows-latest
+    
+    env:
+      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+      SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+      SIGNPATH_PROJECT_SLUG: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Get current date
+      id: date
+      run: echo "date=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+      
+    - name: Generate semantic version
+      id: version
+      run: |
+        # Get the latest release tag
+        $latestTag = gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>$null
+        
+        if ([string]::IsNullOrEmpty($latestTag)) {
+          # No previous releases, start with v1.0.0
+          $newVersion = "v1.0.0"
+          $numericVersion = "1.0.0"
+        } else {
+          # Parse current version (format: vX.Y.Z)
+          $latestTag -match 'v?(\d+)\.(\d+)\.(\d+)' | Out-Null
+          $major = [int]$matches[1]
+          $minor = [int]$matches[2]
+          $patch = [int]$matches[3]
+          
+          # Get PR labels
+          $labels = '${{ toJson(github.event.pull_request.labels.*.name) }}' | ConvertFrom-Json
+          
+          # Determine version bump based on labels
+          if ($labels -contains 'major' -or $labels -contains 'breaking') {
+            $major++
+            $minor = 0
+            $patch = 0
+          } elseif ($labels -contains 'minor' -or $labels -contains 'feature') {
+            $minor++
+            $patch = 0
+          } else {
+            # Default to patch for fixes, chores, refactors, etc.
+            $patch++
+          }
+          
+          $newVersion = "v$major.$minor.$patch"
+          $numericVersion = "$major.$minor.$patch"
+        }
+        
+        echo "version=$newVersion" >> $env:GITHUB_OUTPUT
+        echo "numeric_version=$numericVersion" >> $env:GITHUB_OUTPUT
+        echo "Generated version: $newVersion"
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: Restore dependencies
+      run: dotnet restore src/portable-image-gallery.sln
+      
+    - name: Build
+      run: dotnet build src/portable-image-gallery.sln --configuration Release --no-restore /p:VersionPrefix=${{ steps.version.outputs.numeric_version }}
+      
+    - name: Run tests
+      run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal
+      
+    - name: Publish
+      run: dotnet publish src/ImageGallery/ImageGallery.csproj --configuration Release --output ./publish /p:VersionPrefix=${{ steps.version.outputs.numeric_version }}
+      
+    # Code Signing Steps
+    - name: Install SignTool
+      run: |
+        # SignTool is part of Windows SDK, but let's make sure it's available
+        $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+        if (-not $signtool) {
+          Write-Host "SignTool not found in PATH, checking Windows SDK locations..."
+          $sdkPaths = @(
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe",
+            "${env:ProgramFiles}\Windows Kits\10\bin\*\x64\signtool.exe"
+          )
+          
+          foreach ($path in $sdkPaths) {
+            $found = Get-ChildItem $path -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+            if ($found) {
+              $signToolPath = $found.FullName
+              Write-Host "Found SignTool at: $signToolPath"
+              echo "SIGNTOOL_PATH=$signToolPath" >> $env:GITHUB_ENV
+              break
+            }
+          }
+        } else {
+          echo "SIGNTOOL_PATH=signtool.exe" >> $env:GITHUB_ENV
+        }
+      shell: pwsh
+
+    - name: Upload artifacts for SignPath (if configured)
+      if: ${{ env.SIGNPATH_API_TOKEN != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: unsigned-executables
+        path: ./publish/
+        
+    - name: Sign executables with SignPath (if configured)
+      if: ${{ env.SIGNPATH_API_TOKEN != '' }}
+      uses: signpath/github-action-submit-signing-request@v0.3
+      with:
+        api-token: '${{ env.SIGNPATH_API_TOKEN }}'
+        organization-id: '${{ env.SIGNPATH_ORGANIZATION_ID }}'
+        project-slug: '${{ env.SIGNPATH_PROJECT_SLUG }}'
+        signing-policy-slug: 'release-signing'
+        github-artifact-name: 'unsigned-executables'
+        wait-for-completion: true
+        output-artifact-directory: './publish-signed'
+        
+    - name: Use signed artifacts if available
+      if: ${{ env.SIGNPATH_API_TOKEN != '' }}
+      run: |
+        if (Test-Path "./publish-signed") {
+          Write-Host "Using signed executables from SignPath"
+          Remove-Item "./publish" -Recurse -Force
+          Rename-Item "./publish-signed" "./publish"
+        }
+      shell: pwsh
+
+    - name: Alternative - Self-sign executables (fallback)
+      if: ${{ env.SIGNPATH_API_TOKEN == '' }}
+      run: |
+        Write-Host "??  SignPath not configured, using self-signed certificate as fallback"
+        Write-Host "??  Self-signed executables will still trigger Windows SmartScreen warnings"
+        Write-Host "??  For production releases, configure SignPath secrets for trusted signing"
+        
+        # Create a self-signed certificate for testing
+        $cert = New-SelfSignedCertificate -Subject "CN=ImageGallery-Dev" -Type CodeSigning -CertStoreLocation cert:\CurrentUser\My
+        $certPath = "cert:\CurrentUser\My\$($cert.Thumbprint)"
+        
+        # Sign the main executable
+        $exePath = "./publish/ImageGallery.exe"
+        if (Test-Path $exePath) {
+          Write-Host "Self-signing: $exePath"
+          & $env:SIGNTOOL_PATH sign /v /s MY /sha1 $($cert.Thumbprint) /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "$exePath"
+          
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "? Successfully self-signed ImageGallery.exe"
+          } else {
+            Write-Host "? Failed to self-sign ImageGallery.exe"
+          }
+        }
+        
+        # Clean up the certificate
+        Remove-Item $certPath
+      shell: pwsh
+
+    - name: Verify signatures
+      run: |
+        Write-Host "Verifying signatures of published executables..."
+        
+        Get-ChildItem ./publish -Filter "*.exe" | ForEach-Object {
+          Write-Host "`nChecking: $($_.Name)"
+          
+          # Check if file is signed
+          $signature = Get-AuthenticodeSignature $_.FullName
+          Write-Host "Status: $($signature.Status)"
+          Write-Host "Certificate Subject: $($signature.SignerCertificate.Subject)"
+          Write-Host "Certificate Issuer: $($signature.SignerCertificate.Issuer)"
+          Write-Host "Timestamp: $($signature.TimeStamperCertificate.NotAfter)"
+          
+          if ($signature.Status -eq "Valid") {
+            Write-Host "? $($_.Name) is properly signed"
+          } elseif ($signature.Status -eq "UnknownError" -or $signature.Status -eq "NotSigned") {
+            Write-Host "? $($_.Name) is not signed"
+          } else {
+            Write-Host "??  $($_.Name) signature status: $($signature.Status)"
+          }
+        }
+      shell: pwsh
+      
+    - name: Create Release Archive
+      run: |
+        # Create archive with signed executables
+        Compress-Archive -Path ./publish/* -DestinationPath ImageGallery-${{ steps.version.outputs.version }}.zip
+        
+        # Create checksums for integrity verification
+        $hash = Get-FileHash ImageGallery-${{ steps.version.outputs.version }}.zip -Algorithm SHA256
+        $hash.Hash + "  ImageGallery-${{ steps.version.outputs.version }}.zip" | Out-File -FilePath ImageGallery-${{ steps.version.outputs.version }}.zip.sha256 -Encoding ASCII
+        
+        Write-Host "Archive created: ImageGallery-${{ steps.version.outputs.version }}.zip"
+        Write-Host "SHA256: $($hash.Hash)"
+      shell: pwsh
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: Release ${{ steps.version.outputs.version }}
+        body: |
+          ## ImageGallery Release ${{ steps.version.outputs.version }}
+          
+          **?? Date:** ${{ steps.date.outputs.date }}  
+          **?? PR:** #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+          
+          ### ?? Code Signing Status
+          ${{ env.SIGNPATH_API_TOKEN != '' && '? **Digitally signed** with trusted certificate via SignPath' || '?? **Self-signed certificate** - Windows may show security warnings' }}
+          
+          ### ?? Changes
+          ${{ github.event.pull_request.body }}
+          
+          ### ?? Installation
+          1. Download `ImageGallery-${{ steps.version.outputs.version }}.zip`
+          2. **Verify integrity** (optional): Check SHA256 hash against `.sha256` file
+          3. Extract the archive to your desired location
+          4. Run `ImageGallery.exe`
+          
+          ${{ env.SIGNPATH_API_TOKEN == '' && '### ?? Windows SmartScreen Warning
+          Since this release uses a self-signed certificate, Windows SmartScreen may show a warning. This is normal for self-signed executables. To run the application:
+          1. If you see "Windows protected your PC", click **More info**
+          2. Click **Run anyway**
+          3. The application is safe to run - this warning appears only due to the self-signed certificate' || '' }}
+          
+          ### ?? Usage
+          See [CLI_USAGE.md](https://github.com/${{ github.repository }}/blob/main/src/CLI_USAGE.md) for command-line options and usage examples.
+          
+          ### ??? Security
+          - **Digital Signature:** ${{ env.SIGNPATH_API_TOKEN != '' && 'Trusted CA certificate' || 'Self-signed certificate' }}
+          - **SHA256 Hash:** Available in accompanying `.sha256` file
+          - **Source Code:** Available in this repository with full transparency
+          
+          ---
+          *This release was automatically built and ${{ env.SIGNPATH_API_TOKEN != '' && 'signed' || 'self-signed' }} by GitHub Actions*
+        files: |
+          ImageGallery-${{ steps.version.outputs.version }}.zip
+          ImageGallery-${{ steps.version.outputs.version }}.zip.sha256
+        draft: false
+        prerelease: false
