@@ -19,6 +19,13 @@ public class WindowStateService
     private WindowState _previousWindowState;
     private WindowStyle _previousWindowStyle;
 
+    // Drag state tracking
+    private bool _isDragReady = false;
+    private Point _dragStartPosition;
+    private DateTime _mouseDownTime;
+    private const double DRAG_THRESHOLD_PIXELS = 5.0;
+    private const int DRAG_DELAY_MS = 100;
+
     public bool IsFullscreen => _isFullscreen;
     
     public event Action<string>? LogMessage;
@@ -71,40 +78,71 @@ public class WindowStateService
     }
 
     /// <summary>
-    /// Handle mouse left button down for window dragging.
+    /// Handle mouse left button down for potential window dragging.
+    /// Only prepares for drag, actual drag starts on mouse move.
     /// </summary>
     /// <param name="position">Mouse position relative to window</param>
-    /// <returns>True if drag was initiated, false otherwise</returns>
+    /// <returns>True if ready for drag, false otherwise</returns>
     public bool HandleMouseLeftButtonDown(Point position)
     {
         if (_window == null) return false;
 
-        // Allow dragging window when not in fullscreen, not zoomed, and not near edges (for resizing)
+        // Prepare for dragging window when not in fullscreen, not zoomed, and not near edges (for resizing)
         if (!_isFullscreen && !_zoomController.IsZoomed && !IsNearEdge(position))
         {
-            try
-            {
-                _window.DragMove();
-                _logger.LogTrace("Window drag initiated");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogTrace(ex, "Window drag failed (normal when not clicking on window chrome)");
-                // Ignore exceptions when dragging - this is normal behavior
-                return false;
-            }
+            _isDragReady = true;
+            _dragStartPosition = position;
+            _mouseDownTime = DateTime.Now;
+            _logger.LogTrace("Window drag prepared at position {X:F0},{Y:F0}", position.X, position.Y);
+            return true;
         }
+        
+        _isDragReady = false;
         return false;
     }
 
     /// <summary>
-    /// Handle mouse movement for cursor updates.
+    /// Handle mouse left button up to reset drag state.
+    /// </summary>
+    public void HandleMouseLeftButtonUp()
+    {
+        _isDragReady = false;
+        _logger.LogTrace("Window drag state reset");
+    }
+
+    /// <summary>
+    /// Handle mouse movement for cursor updates and delayed drag initiation.
     /// </summary>
     /// <param name="position">Mouse position relative to window</param>
     public void HandleMouseMove(Point position)
     {
         if (_window == null) return;
+
+        // Check if we should initiate drag
+        if (_isDragReady && Mouse.LeftButton == MouseButtonState.Pressed)
+        {
+            var distance = Math.Sqrt(
+                Math.Pow(position.X - _dragStartPosition.X, 2) + 
+                Math.Pow(position.Y - _dragStartPosition.Y, 2));
+            var timePassed = (DateTime.Now - _mouseDownTime).TotalMilliseconds;
+
+            // Only start drag if mouse moved enough OR enough time passed (to prevent accidental clicks)
+            if (distance >= DRAG_THRESHOLD_PIXELS || timePassed >= DRAG_DELAY_MS)
+            {
+                try
+                {
+                    _isDragReady = false; // Reset before drag to prevent multiple calls
+                    _window.DragMove();
+                    _logger.LogTrace("Window drag initiated after move. Distance: {Distance:F2}px, Time: {Time:F0}ms", 
+                        distance, timePassed);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogTrace(ex, "Window drag failed during mouse move");
+                }
+                return;
+            }
+        }
 
         // Update cursor based on position for resize indication
         if (_isFullscreen || _zoomController.IsZoomed)
