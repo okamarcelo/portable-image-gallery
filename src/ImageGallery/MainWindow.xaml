@@ -14,7 +14,8 @@
         KeyDown="Window_KeyDown"
         Loaded="Window_Loaded"
         MouseMove="Window_MouseMove"
-        MouseLeftButtonDown="Window_MouseLeftButtonDown_Border">
+        MouseLeftButtonDown="Window_MouseLeftButtonDown_Border"
+        MouseLeftButtonUp="Window_MouseLeftButtonUp_Border">
     <WindowChrome.WindowChrome>
         <WindowChrome 
             CaptionHeight="0"

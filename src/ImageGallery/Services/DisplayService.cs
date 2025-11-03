@@ -18,6 +18,14 @@ namespace ImageGallery.Services
         private readonly ILogger<DisplayService> _logger;
         private readonly MosaicManager _mosaicManager;
         private readonly ZoomController _zoomController;
+        private readonly NavigationService _navigationService;
+
+        // Click detection state
+        private Point _mouseDownPosition;
+        private DateTime _mouseDownTime;
+        private bool _isMouseDown = false;
+        private const double CLICK_THRESHOLD_PIXELS = 5.0; // Maximum movement to still be considered a click
+        private const int CLICK_THRESHOLD_MS = 500; // Maximum time to still be considered a click
 
         // Events for UI coordination
         public event Action<string>? LogMessageRequested;
@@ -25,11 +33,13 @@ namespace ImageGallery.Services
         public DisplayService(
             ILogger<DisplayService> logger,
             MosaicManager mosaicManager,
-            ZoomController zoomController)
+            ZoomController zoomController,
+            NavigationService navigationService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mosaicManager = mosaicManager ?? throw new ArgumentNullException(nameof(mosaicManager));
             _zoomController = zoomController ?? throw new ArgumentNullException(nameof(zoomController));
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
         }
 
         /// <summary>
@@ -81,13 +91,18 @@ namespace ImageGallery.Services
         }
 
         /// <summary>
-        /// Handles mouse left button down events for drag operations.
+        /// Handles mouse left button down events for drag operations and click detection.
         /// </summary>
         public bool HandleMouseLeftButtonDown(MouseButtonEventArgs e, Window window, object mosaicDisplay)
         {
+            // Record click state for single-click detection
+            _mouseDownPosition = e.GetPosition(window);
+            _mouseDownTime = DateTime.Now;
+            _isMouseDown = true;
+
             if (!_mosaicManager.IsMosaicMode && _zoomController.IsZoomed)
             {
-                _zoomController.StartDrag(e.GetPosition(window));
+                _zoomController.StartDrag(_mouseDownPosition);
                 if (mosaicDisplay is IInputElement element)
                 {
                     element.CaptureMouse();
@@ -98,14 +113,54 @@ namespace ImageGallery.Services
         }
 
         /// <summary>
-        /// Handles mouse left button up events to end drag operations.
+        /// Handles mouse left button up events to end drag operations and detect single clicks.
         /// </summary>
         public void HandleMouseLeftButtonUp(object mosaicDisplay)
         {
-            _zoomController.EndDrag();
-            if (mosaicDisplay is IInputElement element)
+            if (_isMouseDown)
             {
-                element.ReleaseMouseCapture();
+                // Check if this was a single click (not a drag)
+                var currentTime = DateTime.Now;
+                var timeDiff = (currentTime - _mouseDownTime).TotalMilliseconds;
+                
+                // Get current mouse position for movement calculation
+                if (mosaicDisplay is IInputElement element)
+                {
+                    var currentPosition = Mouse.GetPosition(element);
+                    var distance = Math.Sqrt(
+                        Math.Pow(currentPosition.X - _mouseDownPosition.X, 2) + 
+                        Math.Pow(currentPosition.Y - _mouseDownPosition.Y, 2));
+
+                    // If it's a single click (minimal movement and quick), navigate to next image
+                    // Only navigate if we're not in mosaic mode and not zoomed in (single image view)
+                    if (distance <= CLICK_THRESHOLD_PIXELS && timeDiff <= CLICK_THRESHOLD_MS)
+                    {
+                        if (!_mosaicManager.IsMosaicMode && !_zoomController.IsZoomed)
+                        {
+                            _logger.LogDebug("Single click detected, navigating to next image. Distance: {Distance:F2}px, Time: {Time:F0}ms", 
+                                distance, timeDiff);
+                            _navigationService.NavigateNext();
+                        }
+                        else
+                        {
+                            _logger.LogTrace("Single click detected but navigation skipped - MosaicMode: {MosaicMode}, Zoomed: {Zoomed}", 
+                                _mosaicManager.IsMosaicMode, _zoomController.IsZoomed);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogTrace("Click not registered as single click. Distance: {Distance:F2}px, Time: {Time:F0}ms", 
+                            distance, timeDiff);
+                    }
+                }
+
+                _isMouseDown = false;
+            }
+
+            _zoomController.EndDrag();
+            if (mosaicDisplay is IInputElement element2)
+            {
+                element2.ReleaseMouseCapture();
             }
         }
 

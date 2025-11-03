@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -249,6 +250,11 @@ public partial class MainWindow : Window
             _windowStateService.HandleMouseLeftButtonDown(e.GetPosition(this));
         }
 
+        private void Window_MouseLeftButtonUp_Border(object sender, MouseButtonEventArgs e)
+        {
+            _windowStateService.HandleMouseLeftButtonUp();
+        }
+
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             _windowStateService.HandleMouseMove(e.GetPosition(this));
@@ -267,7 +273,11 @@ public partial class MainWindow : Window
             // Update mosaic layout when window size changes (for orientation-aware 2-pane layout)
             if (_mosaicManager.PaneCount == 2 && _imageManager.ImageCount > 0)
             {
-                _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
+                var mosaicDisplay = this.FindName("MosaicDisplay");
+                if (mosaicDisplay != null)
+                {
+                    _displayService.UpdateMosaicLayout(mosaicDisplay, ActualWidth, ActualHeight);
+                }
             }
         }
 
