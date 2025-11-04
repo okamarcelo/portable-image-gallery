@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap rescap">
+
+  <Identity Name="com.okamarcelo.PortableImageGallery"
+            Publisher="CN=okamarcelo"
+            Version="1.0.0.0" />
+
+  <mp:PhoneIdentity PhoneProductId="93945acc-bdd1-4516-9ab5-f89c21b8ed9a" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+
+  <Properties>
+    <DisplayName>Portable Image Gallery</DisplayName>
+    <PublisherDisplayName>okamarcelo</PublisherDisplayName>
+    <Logo>Images\StoreLogo.png</Logo>
+    <Description>A lightweight, portable image gallery application with slideshow capabilities. Features include single-click navigation, zoom controls, slideshow mode, mosaic view, and keyboard shortcuts. Perfect for viewing and organizing your image collections.</Description>
+    <BackgroundColor>transparent</BackgroundColor>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+                 Executable="$targetnametoken$.exe"
+                 EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="Portable Image Gallery"
+        Description="A lightweight, portable image gallery application"
+        BackgroundColor="transparent"
+        Square150x150Logo="Images\Square150x150Logo.png"
+        Square44x44Logo="Images\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Images\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Images\SplashScreen.png" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="images">
+            <uap:DisplayName>Image Files</uap:DisplayName>
+            <uap:Logo>Images\Square44x44Logo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.jpg</uap:FileType>
+              <uap:FileType>.jpeg</uap:FileType>
+              <uap:FileType>.png</uap:FileType>
+              <uap:FileType>.gif</uap:FileType>
+              <uap:FileType>.bmp</uap:FileType>
+              <uap:FileType>.tiff</uap:FileType>
+              <uap:FileType>.webp</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
