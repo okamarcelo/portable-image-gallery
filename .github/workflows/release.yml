@@ -23,6 +23,16 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+        
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup Windows App SDK (DISABLED)
+      run: |
+        Write-Host "?? Windows App SDK installation is currently disabled"
+        Write-Host "Reason: Not needed for traditional .NET builds, only for MSIX packaging"
+        Write-Host "Skipping Windows App SDK installation..."
+      shell: pwsh
     
     - name: Get current date
       id: date
@@ -76,18 +86,51 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore src/portable-image-gallery.sln
       
-    - name: Build
+    - name: Build main projects
       run: dotnet build src/portable-image-gallery.sln --configuration Release --no-restore /p:VersionPrefix=${{ steps.version.outputs.numeric_version }}
       
     - name: Run tests
       run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal
       
-    - name: Publish
+    - name: Generate MSIX package images (DISABLED)
+      run: |
+        Write-Host "?? MSIX image generation is currently disabled in CI"
+        Write-Host "MSIX package images exist and can be generated locally if needed"
+      shell: pwsh
+      
+    - name: Build MSIX package (DISABLED - needs Windows App SDK)
+      run: |
+        Write-Host "?? MSIX package build is currently disabled in CI"
+        Write-Host "Reason: GitHub Actions runners don't have full Windows App SDK support"
+        Write-Host "MSIX packages can be built locally with Visual Studio 2022 + Windows App SDK"
+        Write-Host "Skipping MSIX build step..."
+        echo "MSIX_BUILD_SUCCESS=false" >> $env:GITHUB_ENV
+      shell: pwsh
+      
+    - name: Publish traditional exe
       run: dotnet publish src/ImageGallery/ImageGallery.csproj --configuration Release --output ./publish /p:VersionPrefix=${{ steps.version.outputs.numeric_version }}
       
-    - name: Create Release Archive
+    - name: Create Release Archives
       run: |
+        # Create traditional ZIP release
         Compress-Archive -Path ./publish/* -DestinationPath ImageGallery-${{ steps.version.outputs.version }}.zip
+        Write-Host "? ZIP release created: ImageGallery-${{ steps.version.outputs.version }}.zip"
+        
+        # Find and rename MSIX package (if build was successful)
+        if ($env:MSIX_BUILD_SUCCESS -eq "true" -and (Test-Path "msix-output")) {
+          $msixFile = Get-ChildItem -Path "msix-output" -Filter "*.msix" -Recurse | Select-Object -First 1
+          if ($msixFile) {
+            Copy-Item $msixFile.FullName -Destination "ImageGallery-${{ steps.version.outputs.version }}.msix"
+            Write-Host "? MSIX package created: ImageGallery-${{ steps.version.outputs.version }}.msix"
+            echo "MSIX_AVAILABLE=true" >> $env:GITHUB_ENV
+          } else {
+            Write-Warning "?? MSIX files not found in output directory"
+            echo "MSIX_AVAILABLE=false" >> $env:GITHUB_ENV
+          }
+        } else {
+          Write-Host "?? MSIX package not available (build failed or skipped)"
+          echo "MSIX_AVAILABLE=false" >> $env:GITHUB_ENV
+        }
       shell: pwsh
       
     - name: Create Release
@@ -109,6 +152,16 @@ jobs:
           1. Download `ImageGallery-${{ steps.version.outputs.version }}.zip`
           2. Extract the archive
           3. Run `ImageGallery.exe`
+          
+          ### Features
+          - Lightweight, portable image viewer with slideshow capabilities
+          - Single-click navigation between images
+          - Zoom controls and keyboard shortcuts
+          - Mosaic view for browsing image collections
+          - Support for common image formats (JPG, PNG, GIF, BMP, TIFF, WEBP)
+          
+          ### Note
+          This release includes the traditional ZIP package. MSIX package may be available in future releases once CI environment supports Windows App SDK.
           
           ### Usage
           See [CLI_USAGE.md](https://github.com/${{ github.repository }}/blob/main/src/CLI_USAGE.md) for command-line options.

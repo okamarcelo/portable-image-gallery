@@ -24,11 +24,35 @@ jobs:
       with:
         dotnet-version: '8.0.x'
         
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup Windows App SDK (DISABLED)
+      run: |
+        Write-Host "?? Windows App SDK installation is currently disabled"
+        Write-Host "Reason: Not needed for traditional .NET builds, only for MSIX packaging"
+        Write-Host "Skipping Windows App SDK installation..."
+      shell: pwsh
+        
     - name: Restore dependencies
       run: dotnet restore src/portable-image-gallery.sln
       
-    - name: Build
+    - name: Build main projects
       run: dotnet build src/portable-image-gallery.sln --configuration Release --no-restore
+      
+    - name: Generate MSIX package images (DISABLED)
+      run: |
+        Write-Host "?? MSIX image generation is currently disabled in CI"
+        Write-Host "MSIX package images exist and can be generated locally if needed"
+      shell: pwsh
+      
+    - name: Build MSIX package (DISABLED - needs Windows App SDK)
+      run: |
+        Write-Host "?? MSIX package build is currently disabled in CI"
+        Write-Host "Reason: GitHub Actions runners don't have full Windows App SDK support"
+        Write-Host "MSIX packages can be built locally with Visual Studio 2022 + Windows App SDK"
+        Write-Host "Skipping MSIX build step..."
+      shell: pwsh
       
     - name: Run tests
       run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal

@@ -1,0 +1,196 @@
+name: MSIX Package Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_configuration:
+        description: 'Build Configuration'
+        required: true
+        default: 'Release'
+        type: choice
+        options:
+        - Release
+        - Debug
+      platform:
+        description: 'Target Platform'
+        required: true
+        default: 'x64'
+        type: choice
+        options:
+        - x64
+        - x86
+        - arm64
+  push:
+    paths:
+      - 'src/ImageGallery.Package/**'
+      - 'src/ImageGallery/**'
+    branches:
+      - 'feature/msix-packaging'
+
+permissions:
+  contents: read
+
+jobs:
+  build-msix:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup Windows App SDK
+      run: |
+        Write-Host "Installing Windows App SDK..."
+        
+        # Download and install Windows App SDK
+        $url = "https://aka.ms/windowsappsdk/1.4/1.4.231008000/windowsappruntimeinstall-x64.exe"
+        $installer = "windowsappruntimeinstall.exe"
+        
+        try {
+          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          Write-Host "Downloaded Windows App SDK installer"
+          
+          Start-Process -FilePath $installer -ArgumentList "--quiet" -Wait -PassThru
+          Write-Host "Windows App SDK installation completed"
+          
+          # Verify installation
+          if (Get-Command "makeappx.exe" -ErrorAction SilentlyContinue) {
+            Write-Host "MakeAppx found - Windows App SDK ready"
+          } else {
+            Write-Warning "MakeAppx not found in PATH"
+          }
+        } catch {
+          Write-Error "Failed to install Windows App SDK: $($_.Exception.Message)"
+          throw
+        }
+      shell: pwsh
+      
+    - name: Restore dependencies
+      run: dotnet restore src/portable-image-gallery.sln
+      
+    - name: Build main application
+      run: dotnet build src/ImageGallery/ImageGallery.csproj --configuration ${{ inputs.build_configuration || 'Release' }} --no-restore
+      
+    - name: Generate MSIX package images
+      run: |
+        Write-Host "Generating MSIX package images..."
+        cd src/ImageGallery.Package
+        
+        if (Test-Path "Generate-PackageImages-Simple.ps1") {
+          try {
+            powershell -ExecutionPolicy Bypass -File "Generate-PackageImages-Simple.ps1"
+            Write-Host "Package images generated successfully"
+            
+            # List generated images
+            if (Test-Path "Images") {
+              Get-ChildItem "Images" -Filter "*.png" | ForEach-Object { 
+                Write-Host "Generated: $($_.Name) ($([math]::Round($_.Length/1KB, 2)) KB)"
+              }
+            }
+          } catch {
+            Write-Error "Failed to generate package images: $($_.Exception.Message)"
+            throw
+          }
+        } else {
+          Write-Warning "Image generation script not found"
+        }
+      shell: pwsh
+      
+    - name: Build MSIX package
+      run: |
+        Write-Host "Building MSIX package..."
+        
+        $platform = "${{ inputs.platform || 'x64' }}"
+        $configuration = "${{ inputs.build_configuration || 'Release' }}"
+        $outputDir = "$env:GITHUB_WORKSPACE\msix-output"
+        
+        Write-Host "Platform: $platform"
+        Write-Host "Configuration: $configuration"
+        Write-Host "Output Directory: $outputDir"
+        
+        try {
+          msbuild src/ImageGallery.Package/ImageGallery.Package.wapproj `
+            /p:Configuration=$configuration `
+            /p:Platform=$platform `
+            /p:AppxBundlePlatforms=$platform `
+            /p:AppxPackageDir=$outputDir `
+            /p:AppxBundle=Never `
+            /p:GenerateAppInstallerFile=false `
+            /verbosity:normal
+            
+          Write-Host "MSIX build completed"
+          
+          # List output files
+          if (Test-Path $outputDir) {
+            Write-Host "Generated files:"
+            Get-ChildItem $outputDir -Recurse | Where-Object { -not $_.PSIsContainer } | ForEach-Object {
+              Write-Host "  $($_.FullName.Replace($outputDir, '.'))"
+            }
+          }
+        } catch {
+          Write-Error "Failed to build MSIX package: $($_.Exception.Message)"
+          throw
+        }
+      shell: pwsh
+      
+    - name: Verify MSIX package
+      run: |
+        Write-Host "Verifying MSIX package..."
+        
+        $msixFiles = Get-ChildItem -Path "msix-output" -Filter "*.msix" -Recurse
+        
+        if ($msixFiles.Count -eq 0) {
+          Write-Error "No MSIX files found in output directory"
+          
+          # List all files for debugging
+          Write-Host "All files in msix-output:"
+          Get-ChildItem -Path "msix-output" -Recurse | ForEach-Object {
+            Write-Host "  $($_.FullName)"
+          }
+          
+          throw "MSIX package verification failed"
+        }
+        
+        foreach ($msix in $msixFiles) {
+          Write-Host "Found MSIX: $($msix.Name) ($([math]::Round($msix.Length/1MB, 2)) MB)"
+          
+          # Basic validation using PowerShell
+          try {
+            # Check if it's a valid ZIP (MSIX is based on ZIP)
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($msix.FullName)
+            $entryCount = $archive.Entries.Count
+            $archive.Dispose()
+            
+            Write-Host "  Package contains $entryCount entries"
+            Write-Host "  Package validation: PASSED ?"
+          } catch {
+            Write-Warning "  Package validation failed: $($_.Exception.Message)"
+          }
+        }
+      shell: pwsh
+      
+    - name: Upload MSIX package
+      uses: actions/upload-artifact@v4
+      with:
+        name: msix-package-${{ inputs.platform || 'x64' }}-${{ inputs.build_configuration || 'Release' }}
+        path: msix-output/**/*.msix
+        retention-days: 30
+        
+    - name: Upload package logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: msix-build-logs-${{ inputs.platform || 'x64' }}-${{ inputs.build_configuration || 'Release' }}
+        path: |
+          msix-output/**/*.log
+          **/*.binlog
+        retention-days: 7
