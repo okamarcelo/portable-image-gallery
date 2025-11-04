@@ -27,25 +27,11 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
       
-    - name: Setup Windows App SDK
+    - name: Setup Windows App SDK (DISABLED)
       run: |
-        Write-Host "Installing Windows App SDK..."
-        try {
-          # Download Windows App SDK
-          $url = "https://aka.ms/windowsappsdk/1.4/1.4.231008000/windowsappruntimeinstall-x64.exe"
-          Invoke-WebRequest -Uri $url -OutFile "windowsappruntimeinstall.exe" -UseBasicParsing
-          
-          # Install with proper error handling
-          $process = Start-Process -FilePath "windowsappruntimeinstall.exe" -ArgumentList "--quiet" -Wait -PassThru
-          if ($process.ExitCode -ne 0) {
-            Write-Warning "Windows App SDK installation may have failed (Exit Code: $($process.ExitCode))"
-          } else {
-            Write-Host "Windows App SDK installed successfully"
-          }
-        } catch {
-          Write-Warning "Failed to install Windows App SDK: $($_.Exception.Message)"
-          Write-Host "Continuing without Windows App SDK..."
-        }
+        Write-Host "?? Windows App SDK installation is currently disabled"
+        Write-Host "Reason: Not needed for traditional .NET builds, only for MSIX packaging"
+        Write-Host "Skipping Windows App SDK installation..."
       shell: pwsh
     
     - name: Get current date
@@ -106,46 +92,19 @@ jobs:
     - name: Run tests
       run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal
       
-    - name: Generate MSIX package images
+    - name: Generate MSIX package images (DISABLED)
       run: |
-        cd src/ImageGallery.Package
-        if (Test-Path "Generate-PackageImages-Simple.ps1") {
-          powershell -ExecutionPolicy Bypass -File "Generate-PackageImages-Simple.ps1"
-        }
+        Write-Host "?? MSIX image generation is currently disabled in CI"
+        Write-Host "MSIX package images exist and can be generated locally if needed"
       shell: pwsh
       
-    - name: Build MSIX package
-      continue-on-error: true
+    - name: Build MSIX package (DISABLED - needs Windows App SDK)
       run: |
-        Write-Host "Attempting to build MSIX package..."
-        try {
-          # Check if MSBuild can find the project
-          if (!(Test-Path "src/ImageGallery.Package/ImageGallery.Package.wapproj")) {
-            throw "WAPPROJ file not found"
-          }
-          
-          # Try to build the MSIX package
-          msbuild src/ImageGallery.Package/ImageGallery.Package.wapproj `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:AppxBundlePlatforms="x64" `
-            /p:AppxPackageDir="$env:GITHUB_WORKSPACE\msix-output\" `
-            /p:AppxBundle=Never `
-            /p:VersionPrefix=${{ steps.version.outputs.numeric_version }} `
-            /verbosity:minimal
-            
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "? MSIX package built successfully"
-            echo "MSIX_BUILD_SUCCESS=true" >> $env:GITHUB_ENV
-          } else {
-            Write-Warning "?? MSIX package build failed (Exit Code: $LASTEXITCODE)"
-            echo "MSIX_BUILD_SUCCESS=false" >> $env:GITHUB_ENV
-          }
-        } catch {
-          Write-Warning "?? MSIX package build failed: $($_.Exception.Message)"
-          Write-Host "This is expected in CI environment without full Windows App SDK"
-          echo "MSIX_BUILD_SUCCESS=false" >> $env:GITHUB_ENV
-        }
+        Write-Host "?? MSIX package build is currently disabled in CI"
+        Write-Host "Reason: GitHub Actions runners don't have full Windows App SDK support"
+        Write-Host "MSIX packages can be built locally with Visual Studio 2022 + Windows App SDK"
+        Write-Host "Skipping MSIX build step..."
+        echo "MSIX_BUILD_SUCCESS=false" >> $env:GITHUB_ENV
       shell: pwsh
       
     - name: Publish traditional exe
