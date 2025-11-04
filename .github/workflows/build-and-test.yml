@@ -24,11 +24,34 @@ jobs:
       with:
         dotnet-version: '8.0.x'
         
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup Windows App SDK
+      run: |
+        # Install Windows App SDK
+        Invoke-WebRequest -Uri "https://aka.ms/windowsappsdk/1.4/1.4.231008000/windowsappruntimeinstall-x64.exe" -OutFile "windowsappruntimeinstall.exe"
+        Start-Process -FilePath "windowsappruntimeinstall.exe" -ArgumentList "--quiet" -Wait
+      shell: pwsh
+        
     - name: Restore dependencies
       run: dotnet restore src/portable-image-gallery.sln
       
-    - name: Build
+    - name: Build main projects
       run: dotnet build src/portable-image-gallery.sln --configuration Release --no-restore
+      
+    - name: Generate MSIX package images
+      run: |
+        cd src/ImageGallery.Package
+        if (Test-Path "Generate-PackageImages-Simple.ps1") {
+          powershell -ExecutionPolicy Bypass -File "Generate-PackageImages-Simple.ps1"
+        }
+      shell: pwsh
+      
+    - name: Build MSIX package
+      run: |
+        msbuild src/ImageGallery.Package/ImageGallery.Package.wapproj /p:Configuration=Release /p:Platform=x64 /p:AppxBundlePlatforms="x64" /p:AppxPackageDir="$env:GITHUB_WORKSPACE\msix-output\" /p:AppxBundle=Never
+      shell: pwsh
       
     - name: Run tests
       run: dotnet test src/ImageGallery.Tests/ImageGallery.Tests.csproj --configuration Release --no-build --verbosity normal
