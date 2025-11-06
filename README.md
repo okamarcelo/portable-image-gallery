@@ -12,7 +12,7 @@ A lightweight, portable WPF image viewer with slideshow capabilities, mosaic vie
 
 ## Features
 
-- :frame_with_picture: **Multiple Image Formats**: PNG, JPG, JPEG, HEIC, HEIF, WebP
+- :framed_picture: **Multiple Image Formats**: PNG, JPG, JPEG, HEIC, HEIF, WebP
 - :movie_camera: **Slideshow Mode**: Automatic image rotation with adjustable speed
 - :bar_chart: **Mosaic View**: Display 1, 2, 4, 9, or 16 images simultaneously
 - :zap: **Lazy Loading**: Efficient memory management with sliding window cache
@@ -39,14 +39,14 @@ Download the latest release from the [Releases](https://github.com/okamarcelo/po
 ## Keyboard Shortcuts
 
 ### Navigation
-- **Arrow Keys (?/?)**: Next image(s)
-- **Arrow Keys (?/?)**: Previous image(s)
+- **Arrow Keys (Right/Left)**: Next image(s)
+- **Arrow Keys (Up/Down)**: Previous image(s)
 - **Home**: Go to first image
 - **End**: Go to last image
 
 ### View Controls
 - **F**: Toggle fullscreen mode
-- **M**: Increase mosaic panes (1?2?4?9?16)
+- **M**: Increase mosaic panes (1 -> 2 -> 4 -> 9 -> 16)
 - **N**: Decrease mosaic panes
 - **+**: Zoom in
 - **-**: Zoom out
