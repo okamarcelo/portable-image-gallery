@@ -41,15 +41,24 @@ namespace ImageGallery.Services
         /// <summary>
         /// Updates the ItemsControl with new items, applying transition if enabled.
         /// </summary>
-        public async Task UpdateItemsAsync(IEnumerable newItems)
+        public async Task UpdateItemsAsync(IEnumerable? newItems)
         {
-            if (_trackedControl == null)
+            if (_trackedControl == null || newItems == null)
+            {
+                if (_trackedControl != null)
+                    _trackedControl.ItemsSource = newItems;
                 return;
+            }
 
-            if (!_transitionEnabled || _isTransitioning)
+            // Count items - only transition if displaying single image
+            var itemCount = newItems.Cast<object>().Count();
+            var shouldTransition = _transitionEnabled && !_isTransitioning && itemCount == 1;
+
+            if (!shouldTransition)
             {
                 // No transition - just update directly
                 _trackedControl.ItemsSource = newItems;
+                _transitionEnabled = false; // Reset flag
                 return;
             }
 
