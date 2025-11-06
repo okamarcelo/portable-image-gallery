@@ -93,14 +93,17 @@ namespace ImageGallery.Controls
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] OnLoaded called");
             if (_rootGrid == null)
             {
+                System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Building visual tree");
                 BuildVisualTree();
             }
         }
 
         private void BuildVisualTree()
         {
+            System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] BuildVisualTree started");
             _rootGrid = new Grid
             {
                 ClipToBounds = true,
@@ -109,8 +112,12 @@ namespace ImageGallery.Controls
 
             // Create the current ItemsControl
             _currentItemsControl = CreateItemsControl();
+            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] Created current ItemsControl, ItemsSource is null: {ItemsSource == null}");
             if (ItemsSource != null)
+            {
                 _currentItemsControl.ItemsSource = ItemsSource;
+                System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] Set ItemsSource on current ItemsControl");
+            }
 
             // Create the previous ItemsControl (initially hidden)
             _previousItemsControl = CreateItemsControl();
@@ -121,6 +128,7 @@ namespace ImageGallery.Controls
 
             AddVisualChild(_rootGrid);
             AddLogicalChild(_rootGrid);
+            System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] BuildVisualTree completed");
         }
 
         private ItemsControl CreateItemsControl()
@@ -175,6 +183,7 @@ namespace ImageGallery.Controls
         {
             var control = (SlidingItemsControl)d;
             var template = e.NewValue as DataTemplate;
+            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] OnItemTemplateChanged: template={(template == null ? "null" : "notNull")}");
             if (control._currentItemsControl != null && template != null)
                 control._currentItemsControl.ItemTemplate = template;
             if (control._previousItemsControl != null && template != null)
@@ -185,6 +194,7 @@ namespace ImageGallery.Controls
         {
             var control = (SlidingItemsControl)d;
             var panel = e.NewValue as ItemsPanelTemplate;
+            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] OnItemsPanelChanged: panel={(panel == null ? "null" : "notNull")}");
             if (control._currentItemsControl != null && panel != null)
                 control._currentItemsControl.ItemsPanel = panel;
             if (control._previousItemsControl != null && panel != null)
@@ -199,8 +209,11 @@ namespace ImageGallery.Controls
 
         private void OnItemsSourceChanged(IEnumerable? oldItems, IEnumerable? newItems)
         {
+            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] OnItemsSourceChanged: old={(oldItems == null ? "null" : "notNull")}, new={(newItems == null ? "null" : "notNull")}, EnableTransition={EnableTransition}, _isTransitioning={_isTransitioning}");
+            
             if (_currentItemsControl == null || _previousItemsControl == null || _rootGrid == null)
             {
+                System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Controls not initialized yet, saving items for later");
                 _previousItems = newItems;
                 return;
             }
@@ -208,12 +221,14 @@ namespace ImageGallery.Controls
             // If transitions are disabled or this is the first content, just update instantly
             if (!EnableTransition || oldItems == null || _isTransitioning)
             {
+                System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Updating instantly (no transition)");
                 _currentItemsControl.ItemsSource = newItems;
                 _previousItems = newItems;
                 return;
             }
 
             // Start the slide transition
+            System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Starting slide transition");
             BeginSlideTransition(oldItems, newItems);
         }
 
