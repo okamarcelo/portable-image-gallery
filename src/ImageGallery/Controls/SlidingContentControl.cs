@@ -33,14 +33,14 @@ namespace ImageGallery.Controls
                 nameof(ItemTemplate),
                 typeof(DataTemplate),
                 typeof(SlidingItemsControl),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, OnItemTemplateChanged));
 
         public static readonly DependencyProperty ItemsPanelProperty =
             DependencyProperty.Register(
                 nameof(ItemsPanel),
                 typeof(ItemsPanelTemplate),
                 typeof(SlidingItemsControl),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, OnItemsPanelChanged));
 
         public static readonly DependencyProperty TransitionDurationProperty =
             DependencyProperty.Register(
@@ -103,12 +103,14 @@ namespace ImageGallery.Controls
         {
             _rootGrid = new Grid
             {
-                ClipToBounds = true
+                ClipToBounds = true,
+                Background = System.Windows.Media.Brushes.Transparent
             };
 
             // Create the current ItemsControl
             _currentItemsControl = CreateItemsControl();
-            _currentItemsControl.ItemsSource = ItemsSource;
+            if (ItemsSource != null)
+                _currentItemsControl.ItemsSource = ItemsSource;
 
             // Create the previous ItemsControl (initially hidden)
             _previousItemsControl = CreateItemsControl();
@@ -118,6 +120,7 @@ namespace ImageGallery.Controls
             _rootGrid.Children.Add(_currentItemsControl);
 
             AddVisualChild(_rootGrid);
+            AddLogicalChild(_rootGrid);
         }
 
         private ItemsControl CreateItemsControl()
@@ -132,9 +135,12 @@ namespace ImageGallery.Controls
                         new TranslateTransform { X = 0, Y = 0 }
                     }
                 },
-                RenderTransformOrigin = new Point(0.5, 0.5)
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
             };
 
+            // Apply template and panel from properties
             if (ItemTemplate != null)
                 itemsControl.ItemTemplate = ItemTemplate;
             
@@ -163,6 +169,26 @@ namespace ImageGallery.Controls
         {
             _rootGrid?.Arrange(new Rect(arrangeBounds));
             return arrangeBounds;
+        }
+
+        private static void OnItemTemplateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = (SlidingItemsControl)d;
+            var template = e.NewValue as DataTemplate;
+            if (control._currentItemsControl != null && template != null)
+                control._currentItemsControl.ItemTemplate = template;
+            if (control._previousItemsControl != null && template != null)
+                control._previousItemsControl.ItemTemplate = template;
+        }
+
+        private static void OnItemsPanelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = (SlidingItemsControl)d;
+            var panel = e.NewValue as ItemsPanelTemplate;
+            if (control._currentItemsControl != null && panel != null)
+                control._currentItemsControl.ItemsPanel = panel;
+            if (control._previousItemsControl != null && panel != null)
+                control._previousItemsControl.ItemsPanel = panel;
         }
 
         private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
