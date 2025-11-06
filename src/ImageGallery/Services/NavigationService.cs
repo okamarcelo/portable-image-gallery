@@ -20,12 +20,14 @@ namespace ImageGallery.Services
         private readonly DebugLogger _debugLogger;
 
         private int _currentIndex = 0;
+        private bool _isAutomaticNavigation = false; // Track if navigation is from slideshow
 
         // Events for UI updates
         public event Action<List<BitmapImage>>? ImagesDisplayRequested;
         public event Action MosaicLayoutUpdateRequested;
         public event Action<bool>? FlashSideRequested; // true = right, false = left
         public event Action<string>? LogMessageRequested;
+        public event Action? SlideTransitionRequested; // Request slide animation for automatic navigation
 
         public int CurrentIndex 
         { 
@@ -91,6 +93,7 @@ namespace ImageGallery.Services
 
         public void OnSlideshowTick()
         {
+            _isAutomaticNavigation = true; // Mark this as automatic navigation
             _currentIndex = (_currentIndex + _mosaicManager.PaneCount) % _imageManager.ImageCount;
             _mosaicManager.ResetPaneIndex();
             _ = ShowImageAsync(_currentIndex);
@@ -98,10 +101,17 @@ namespace ImageGallery.Services
 
         public async Task ShowImageAsync(int index)
         {
-            _debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {_imageManager.ImageCount}");
+            _debugLogger.Log($"[SHOW] ShowImageAsync called with index: {index}, imageCount: {_imageManager.ImageCount}, isAutomatic: {_isAutomaticNavigation}");
             
             if (_imageManager.ImageCount > 0 && index >= 0 && index < _imageManager.ImageCount)
             {
+                // Enable transition for automatic navigation BEFORE updating images
+                if (_isAutomaticNavigation)
+                {
+                    _debugLogger.Log($"[ANIM] Enabling slide transition for automatic navigation");
+                    SlideTransitionRequested?.Invoke();
+                }
+                
                 // Get images to display (supports both lazy loading and legacy mode)
                 _debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={_mosaicManager.PaneCount})");
                 var imagesToShow = await _imageManager.GetImagesAsync(index, _mosaicManager.PaneCount);
@@ -110,6 +120,7 @@ namespace ImageGallery.Services
                 
                 if (imagesToShow.Count > 0)
                 {
+                    // Update the images - this will trigger the animation if enabled
                     ImagesDisplayRequested?.Invoke(imagesToShow);
 
                     // Request mosaic layout update for orientation detection
@@ -124,6 +135,9 @@ namespace ImageGallery.Services
                     // Preload next images in background for smooth playback (after displaying current images)
                     _ = _imageManager.PreloadImagesAsync(index, _mosaicManager.PaneCount);
                 }
+                
+                // Reset automatic navigation flag after processing
+                _isAutomaticNavigation = false;
             }
         }
 
