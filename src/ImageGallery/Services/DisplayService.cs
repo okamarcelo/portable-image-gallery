@@ -24,6 +24,9 @@ namespace ImageGallery.Services
         private Point _mouseDownPosition;
         private DateTime _mouseDownTime;
         private bool _isMouseDown = false;
+        private Point _rightMouseDownPosition;
+        private DateTime _rightMouseDownTime;
+        private bool _isRightMouseDown = false;
         private const double CLICK_THRESHOLD_PIXELS = 5.0; // Maximum movement to still be considered a click
         private const int CLICK_THRESHOLD_MS = 500; // Maximum time to still be considered a click
 
@@ -172,6 +175,63 @@ namespace ImageGallery.Services
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 _zoomController.UpdateDrag(e.GetPosition(window));
+            }
+        }
+
+        /// <summary>
+        /// Handles mouse right button down events for click detection.
+        /// </summary>
+        public void HandleMouseRightButtonDown(MouseButtonEventArgs e, Window window)
+        {
+            // Record click state for single right-click detection
+            _rightMouseDownPosition = e.GetPosition(window);
+            _rightMouseDownTime = DateTime.Now;
+            _isRightMouseDown = true;
+        }
+
+        /// <summary>
+        /// Handles mouse right button up events to detect single right clicks and navigate to previous image.
+        /// </summary>
+        public void HandleMouseRightButtonUp(object mosaicDisplay)
+        {
+            if (_isRightMouseDown)
+            {
+                // Check if this was a single click (not a drag)
+                var currentTime = DateTime.Now;
+                var timeDiff = (currentTime - _rightMouseDownTime).TotalMilliseconds;
+                
+                // Get current mouse position for movement calculation
+                if (mosaicDisplay is IInputElement element)
+                {
+                    var currentPosition = Mouse.GetPosition(element);
+                    var distance = Math.Sqrt(
+                        Math.Pow(currentPosition.X - _rightMouseDownPosition.X, 2) + 
+                        Math.Pow(currentPosition.Y - _rightMouseDownPosition.Y, 2));
+
+                    // If it's a single click (minimal movement and quick), navigate to previous image
+                    // Only navigate if we're not in mosaic mode and not zoomed in (single image view)
+                    if (distance <= CLICK_THRESHOLD_PIXELS && timeDiff <= CLICK_THRESHOLD_MS)
+                    {
+                        if (!_mosaicManager.IsMosaicMode && !_zoomController.IsZoomed)
+                        {
+                            _logger.LogDebug("Single right-click detected, navigating to previous image. Distance: {Distance:F2}px, Time: {Time:F0}ms", 
+                                distance, timeDiff);
+                            _navigationService.NavigatePrevious();
+                        }
+                        else
+                        {
+                            _logger.LogTrace("Single right-click detected but navigation skipped - MosaicMode: {MosaicMode}, Zoomed: {Zoomed}", 
+                                _mosaicManager.IsMosaicMode, _zoomController.IsZoomed);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogTrace("Right-click not registered as single click. Distance: {Distance:F2}px, Time: {Time:F0}ms", 
+                            distance, timeDiff);
+                    }
+                }
+
+                _isRightMouseDown = false;
             }
         }
 

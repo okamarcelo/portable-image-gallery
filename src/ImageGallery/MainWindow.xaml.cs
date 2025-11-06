@@ -255,6 +255,20 @@ public partial class MainWindow : Window
             _windowStateService.HandleMouseLeftButtonUp();
         }
 
+        private void Window_MouseRightButtonDown_Border(object sender, MouseButtonEventArgs e)
+        {
+            _displayService.HandleMouseRightButtonDown(e, this);
+        }
+
+        private void Window_MouseRightButtonUp_Border(object sender, MouseButtonEventArgs e)
+        {
+            var mosaicDisplay = this.FindName("MosaicDisplay");
+            if (mosaicDisplay != null)
+            {
+                _displayService.HandleMouseRightButtonUp(mosaicDisplay);
+            }
+        }
+
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
             _windowStateService.HandleMouseMove(e.GetPosition(this));
@@ -323,6 +337,16 @@ public partial class MainWindow : Window
         private void MosaicDisplay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             _displayService.HandleMouseLeftButtonUp(sender);
+        }
+
+        private void MosaicDisplay_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _displayService.HandleMouseRightButtonDown(e, this);
+        }
+
+        private void MosaicDisplay_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            _displayService.HandleMouseRightButtonUp(sender);
         }
 
         private void MosaicDisplay_MouseMove(object sender, MouseEventArgs e)
