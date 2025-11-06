@@ -17,7 +17,7 @@ namespace ImageGallery.Services
         private readonly ILogger<TransitionAnimationService> _logger;
         private bool _isAnimating = false;
         
-        private const int SLIDE_DURATION_MS = 400; // Duration of slide animation
+        private const int TRANSITION_DURATION_MS = 300; // Duration of transition animation
 
         public TransitionAnimationService(ILogger<TransitionAnimationService> logger)
         {
@@ -27,6 +27,7 @@ namespace ImageGallery.Services
         /// <summary>
         /// Applies a slide-left transition animation to the ItemsControl displaying images.
         /// This is used for automatic navigation (slideshow) to provide visual feedback.
+        /// Uses a translate transform to slide the entire control left and back.
         /// </summary>
         /// <param name="itemsControl">The ItemsControl containing the images</param>
         /// <returns>Task that completes when animation finishes</returns>
@@ -39,7 +40,7 @@ namespace ImageGallery.Services
             
             try
             {
-                _logger.LogTrace("Starting slide-left animation");
+                _logger.LogTrace("Starting slide-left transition");
 
                 // Get the translate transform (should already exist from zoom functionality)
                 var transformGroup = itemsControl.RenderTransform as TransformGroup;
@@ -61,52 +62,51 @@ namespace ImageGallery.Services
                 // Get the actual width of the control for animation distance
                 var width = itemsControl.ActualWidth;
                 
-                // Create animation: slide from 0 to -width (left), then snap to +width, then slide to 0
-                var storyboard = new Storyboard();
-                
-                // Phase 1: Slide current image out to the left
-                var slideOutAnimation = new DoubleAnimation
+                if (width <= 0)
                 {
-                    From = 0,
-                    To = -width,
-                    Duration = TimeSpan.FromMilliseconds(SLIDE_DURATION_MS / 2),
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                    _logger.LogWarning("Control width is 0, skipping animation");
+                    _isAnimating = false;
+                    return;
+                }
+                
+                // Save current X position (likely 0 unless zoomed/panned)
+                var originalX = translateTransform.X;
+                
+                // Create animation: slide from right to center (gives appearance of sliding left)
+                // Start from right side, end at original position
+                var slideAnimation = new DoubleAnimation
+                {
+                    From = originalX + width * 0.3, // Start 30% to the right
+                    To = originalX, // End at original position
+                    Duration = TimeSpan.FromMilliseconds(TRANSITION_DURATION_MS),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };
                 
-                Storyboard.SetTarget(slideOutAnimation, translateTransform);
-                Storyboard.SetTargetProperty(slideOutAnimation, new PropertyPath(TranslateTransform.XProperty));
-                storyboard.Children.Add(slideOutAnimation);
+                var storyboard = new Storyboard();
+                Storyboard.SetTarget(slideAnimation, translateTransform);
+                Storyboard.SetTargetProperty(slideAnimation, new PropertyPath(TranslateTransform.XProperty));
+                storyboard.Children.Add(slideAnimation);
+
+                // Create opacity fade-in for smooth appearance
+                var opacityAnimation = new DoubleAnimation
+                {
+                    From = 0.0,
+                    To = 1.0,
+                    Duration = TimeSpan.FromMilliseconds(TRANSITION_DURATION_MS * 0.6)
+                };
+                
+                Storyboard.SetTarget(opacityAnimation, itemsControl);
+                Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(UIElement.OpacityProperty));
+                storyboard.Children.Add(opacityAnimation);
 
                 // Start the animation
                 var tcs = new TaskCompletionSource<bool>();
                 
                 storyboard.Completed += (s, e) =>
                 {
-                    // After sliding out, position the new image off-screen to the right
-                    translateTransform.X = width;
-                    
-                    // Phase 2: Slide new image in from the right
-                    var slideInAnimation = new DoubleAnimation
-                    {
-                        From = width,
-                        To = 0,
-                        Duration = TimeSpan.FromMilliseconds(SLIDE_DURATION_MS / 2),
-                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    
-                    var slideInStoryboard = new Storyboard();
-                    Storyboard.SetTarget(slideInAnimation, translateTransform);
-                    Storyboard.SetTargetProperty(slideInAnimation, new PropertyPath(TranslateTransform.XProperty));
-                    slideInStoryboard.Children.Add(slideInAnimation);
-                    
-                    slideInStoryboard.Completed += (s2, e2) =>
-                    {
-                        _logger.LogTrace("Slide-left animation completed");
-                        _isAnimating = false;
-                        tcs.SetResult(true);
-                    };
-                    
-                    slideInStoryboard.Begin();
+                    _logger.LogTrace("Slide-left transition completed");
+                    _isAnimating = false;
+                    tcs.SetResult(true);
                 };
 
                 storyboard.Begin();
@@ -114,7 +114,7 @@ namespace ImageGallery.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during slide animation");
+                _logger.LogError(ex, "Error during slide transition");
                 _isAnimating = false;
             }
         }
