@@ -1,4 +1,8 @@
-# Portable Image Gallery
+# Portable Image Gallery (P.I.G.)
+
+<p align="center">
+  <img src="assets/pig-readme-banner.svg" alt="Portable Image Gallery - PIG" width="800"/>
+</p>
 
 A lightweight, portable WPF image viewer with slideshow capabilities, mosaic view, and internationalization support.
 
@@ -8,16 +12,16 @@ A lightweight, portable WPF image viewer with slideshow capabilities, mosaic vie
 
 ## Features
 
-- ??? **Multiple Image Formats**: PNG, JPG, JPEG, HEIC, HEIF, WebP
-- ?? **Slideshow Mode**: Automatic image rotation with adjustable speed
-- ?? **Mosaic View**: Display 1, 2, 4, 9, or 16 images simultaneously
-- ?? **Lazy Loading**: Efficient memory management with sliding window cache
-- ?? **Internationalization**: Multi-language support (English, Portuguese)
-- ??? **Fullscreen Support**: Immersive viewing experience
-- ? **Portable**: Single executable file, no installation required
-- ?? **CLI Support**: Command-line interface for automation
-- ?? **Zoom Functionality**: Zoom in/out on images
-- ?? **Debug Console**: Built-in logging for troubleshooting
+- :framed_picture: **Multiple Image Formats**: PNG, JPG, JPEG, HEIC, HEIF, WebP
+- :movie_camera: **Slideshow Mode**: Automatic image rotation with adjustable speed
+- :bar_chart: **Mosaic View**: Display 1, 2, 4, 9, or 16 images simultaneously
+- :zap: **Lazy Loading**: Efficient memory management with sliding window cache
+- :globe_with_meridians: **Internationalization**: Multi-language support (English, Portuguese)
+- :desktop_computer: **Fullscreen Support**: Immersive viewing experience
+- :briefcase: **Portable**: Single executable file, no installation required
+- :computer: **CLI Support**: Command-line interface for automation
+- :mag: **Zoom Functionality**: Zoom in/out on images
+- :bug: **Debug Console**: Built-in logging for troubleshooting
 
 ## Quick Start
 
@@ -35,14 +39,14 @@ Download the latest release from the [Releases](https://github.com/okamarcelo/po
 ## Keyboard Shortcuts
 
 ### Navigation
-- **Arrow Keys (?/?)**: Next image(s)
-- **Arrow Keys (?/?)**: Previous image(s)
+- **Arrow Keys (Right/Left)**: Next image(s)
+- **Arrow Keys (Up/Down)**: Previous image(s)
 - **Home**: Go to first image
 - **End**: Go to last image
 
 ### View Controls
 - **F**: Toggle fullscreen mode
-- **M**: Increase mosaic panes (1?2?4?9?16)
+- **M**: Increase mosaic panes (1 -> 2 -> 4 -> 9 -> 16)
 - **N**: Decrease mosaic panes
 - **+**: Zoom in
 - **-**: Zoom out
