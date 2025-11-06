@@ -177,11 +177,11 @@ public partial class MainWindow : Window
             _navigationService.ImagesDisplayRequested += images => 
                 Dispatcher.Invoke(() => MosaicDisplay.ItemsSource = images);
             _navigationService.MosaicLayoutUpdateRequested += () => 
-                _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
+                _displayService.UpdateMosaicLayout(MosaicDisplay.CurrentItemsControl, ActualWidth, ActualHeight);
             _navigationService.FlashSideRequested += isRight => 
                 _ = _displayService.FlashSideAsync(isRight, RightFlash, LeftFlash);
             _navigationService.SlideTransitionRequested += () =>
-                _ = _transitionAnimationService.AnimateSlideLeftAsync(MosaicDisplay);
+                _transitionAnimationService.EnableTransitionOnce(MosaicDisplay);
 
             // DisplayService events
             _displayService.LogMessageRequested += msg => _debugLogger.Log(msg);
@@ -197,7 +197,13 @@ public partial class MainWindow : Window
             _debugLogger.Initialize(DebugConsole, LogTextBlock);
             _pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
             _indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
-            _zoomController.Initialize(MosaicScaleTransform, MosaicTranslateTransform);
+            
+            // Initialize zoom controller with transforms from the sliding control
+            if (MosaicDisplay.CurrentScaleTransform != null && MosaicDisplay.CurrentTranslateTransform != null)
+            {
+                _zoomController.Initialize(MosaicDisplay.CurrentScaleTransform, MosaicDisplay.CurrentTranslateTransform);
+            }
+            
             _windowStateService.Initialize(this);
 
             _debugLogger.Log(Strings.Status_ApplicationStarted);

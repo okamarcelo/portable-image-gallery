@@ -105,6 +105,13 @@ namespace ImageGallery.Services
             
             if (_imageManager.ImageCount > 0 && index >= 0 && index < _imageManager.ImageCount)
             {
+                // Enable transition for automatic navigation BEFORE updating images
+                if (_isAutomaticNavigation)
+                {
+                    _debugLogger.Log($"[ANIM] Enabling slide transition for automatic navigation");
+                    SlideTransitionRequested?.Invoke();
+                }
+                
                 // Get images to display (supports both lazy loading and legacy mode)
                 _debugLogger.Log($"[SHOW] Calling GetImagesAsync(index={index}, paneCount={_mosaicManager.PaneCount})");
                 var imagesToShow = await _imageManager.GetImagesAsync(index, _mosaicManager.PaneCount);
@@ -113,20 +120,11 @@ namespace ImageGallery.Services
                 
                 if (imagesToShow.Count > 0)
                 {
-                    // Update the images first
+                    // Update the images - this will trigger the animation if enabled
                     ImagesDisplayRequested?.Invoke(imagesToShow);
 
                     // Request mosaic layout update for orientation detection
                     MosaicLayoutUpdateRequested?.Invoke();
-                    
-                    // Request slide transition animation AFTER images are loaded (if automatic navigation)
-                    if (_isAutomaticNavigation)
-                    {
-                        _debugLogger.Log($"[ANIM] Requesting slide transition for automatic navigation");
-                        // Small delay to ensure images are rendered before animating
-                        await Task.Delay(10);
-                        SlideTransitionRequested?.Invoke();
-                    }
 
                     var fileName = _imageManager.GetImageFileName(index);
                     var logMsg = $"Showing: {fileName}";
