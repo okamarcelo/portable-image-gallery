@@ -15,7 +15,9 @@
         Loaded="Window_Loaded"
         MouseMove="Window_MouseMove"
         MouseLeftButtonDown="Window_MouseLeftButtonDown_Border"
-        MouseLeftButtonUp="Window_MouseLeftButtonUp_Border">
+        MouseLeftButtonUp="Window_MouseLeftButtonUp_Border"
+        MouseRightButtonDown="Window_MouseRightButtonDown_Border"
+        MouseRightButtonUp="Window_MouseRightButtonUp_Border">
     <WindowChrome.WindowChrome>
         <WindowChrome 
             CaptionHeight="0"
@@ -29,6 +31,8 @@
         <ItemsControl x:Name="MosaicDisplay" MouseWheel="MosaicDisplay_MouseWheel"
                       MouseLeftButtonDown="MosaicDisplay_MouseLeftButtonDown"
                       MouseLeftButtonUp="MosaicDisplay_MouseLeftButtonUp"
+                      MouseRightButtonDown="MosaicDisplay_MouseRightButtonDown"
+                      MouseRightButtonUp="MosaicDisplay_MouseRightButtonUp"
                       MouseMove="MosaicDisplay_MouseMove">
             <ItemsControl.RenderTransform>
                 <TransformGroup>
