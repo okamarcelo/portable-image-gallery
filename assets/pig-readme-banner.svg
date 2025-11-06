@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <!-- Gradients for depth -->
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2E4B8F;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#6495ED;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#FF9BB0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFB6C1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2E4B8F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A6F;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="frameGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6495ED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4169E1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="pigGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD1DC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFB6C1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="briefcaseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5B8FE8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4169E1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky background -->
+  <rect x="0" y="0" width="800" height="250" fill="url(#skyGradient)"/>
+  
+  <!-- Grass field -->
+  <rect x="0" y="250" width="800" height="150" fill="url(#grassGradient)"/>
+  
+  <!-- Ground line highlight -->
+  <line x1="0" y1="250" x2="800" y2="250" stroke="#4169E1" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Grass blades decoration -->
+  <g opacity="0.3">
+    <path d="M 50 250 Q 45 270 50 280" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 120 250 Q 115 275 120 285" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 200 250 Q 195 268 200 278" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 280 250 Q 275 272 280 282" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 360 250 Q 355 265 360 275" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 440 250 Q 435 270 440 280" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 520 250 Q 515 268 520 278" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 600 250 Q 595 273 600 283" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 680 250 Q 675 267 680 277" stroke="#6495ED" stroke-width="2" fill="none"/>
+    <path d="M 750 250 Q 745 271 750 281" stroke="#6495ED" stroke-width="2" fill="none"/>
+  </g>
+  
+  <!-- Stars in sky -->
+  <circle cx="100" cy="50" r="2" fill="white" opacity="0.8"/>
+  <circle cx="150" cy="80" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="250" cy="40" r="2" fill="white" opacity="0.7"/>
+  <circle cx="320" cy="70" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="450" cy="55" r="2" fill="white" opacity="0.6"/>
+  <circle cx="550" cy="90" r="1.5" fill="white" opacity="0.7"/>
+  <circle cx="650" cy="45" r="2" fill="white" opacity="0.8"/>
+  <circle cx="720" cy="75" r="1.5" fill="white" opacity="0.6"/>
+  
+  <!-- Image Frame (Picture representation) - Left -->
+  <g id="imageFrame" transform="translate(120, 170)">
+    <!-- Shadow -->
+    <rect x="5" y="5" width="120" height="100" rx="4" fill="#000" opacity="0.2"/>
+    <!-- Outer frame -->
+    <rect x="0" y="0" width="120" height="100" rx="4" fill="url(#frameGradient)" stroke="#2E4B8F" stroke-width="4"/>
+    <!-- Inner photo area -->
+    <rect x="10" y="10" width="100" height="80" rx="2" fill="#E8F0FF"/>
+    <!-- Simple mountain/landscape in frame -->
+    <path d="M 12 80 L 35 45 L 55 60 L 75 38 L 108 80 Z" fill="#6495ED" opacity="0.7"/>
+    <circle cx="75" cy="38" r="10" fill="#FFD700" opacity="0.8"/>
+    <!-- Frame highlight -->
+    <rect x="0" y="0" width="120" height="4" rx="2" fill="#7BA5F0" opacity="0.6"/>
+  </g>
+  
+  <!-- Pig (Center) with legs -->
+  <g id="pig" transform="translate(400, 180)">
+    <!-- Shadow -->
+    <ellipse cx="0" cy="77" rx="60" ry="15" fill="#000" opacity="0.2"/>
+    
+    <!-- Pig legs - only 2 legs, 80% height -->
+    <g id="legs">
+      <!-- Left leg -->
+      <rect x="-30" y="45" width="14" height="32" rx="7" fill="#FFD1DC" stroke="#FF9BB0" stroke-width="2"/>
+      <!-- Left hoof - W shaped pointy toes (dark grey filled) -->
+      <polygon points="-30,77 -27,84 -23,77 -20,84 -16,77 -16,79 -30,79" fill="#4A4A4A" stroke="#333" stroke-width="1"/>
+      
+      <!-- Right leg -->
+      <rect x="16" y="45" width="14" height="32" rx="7" fill="#FFD1DC" stroke="#FF9BB0" stroke-width="2"/>
+      <!-- Right hoof - W shaped pointy toes (dark grey filled) -->
+      <polygon points="16,77 19,84 23,77 26,84 30,77 30,79 16,79" fill="#4A4A4A" stroke="#333" stroke-width="1"/>
+    </g>
+    
+    <!-- Pig body/head -->
+    <ellipse cx="0" cy="0" rx="70" ry="65" fill="url(#pigGradient)" stroke="#FF9BB0" stroke-width="4"/>
+    
+    <!-- Pig ears -->
+    <ellipse cx="-49" cy="-34" rx="22" ry="32" fill="#FFB6C1" stroke="#FF9BB0" stroke-width="3" transform="rotate(-20 -49 -34)"/>
+    <ellipse cx="49" cy="-34" rx="22" ry="32" fill="#FFB6C1" stroke="#FF9BB0" stroke-width="3" transform="rotate(20 49 -34)"/>
+    <!-- Inner ear details -->
+    <ellipse cx="-49" cy="-34" rx="12" ry="18" fill="#FF9BB0" opacity="0.5" transform="rotate(-20 -49 -34)"/>
+    <ellipse cx="49" cy="-34" rx="12" ry="18" fill="#FF9BB0" opacity="0.5" transform="rotate(20 49 -34)"/>
+    
+    <!-- Pig snout -->
+    <ellipse cx="0" cy="12" rx="31" ry="24" fill="#FFD1DC" stroke="#FF9BB0" stroke-width="3"/>
+    <!-- Nostrils -->
+    <ellipse cx="-11" cy="12" rx="6" ry="10" fill="#FF9BB0"/>
+    <ellipse cx="11" cy="12" rx="6" ry="10" fill="#FF9BB0"/>
+    
+    <!-- Pig eyes -->
+    <circle cx="-23" cy="-12" r="10" fill="#2E4B8F"/>
+    <circle cx="23" cy="-12" r="10" fill="#2E4B8F"/>
+    <!-- Eye highlights -->
+    <circle cx="-20" cy="-16" r="4" fill="white"/>
+    <circle cx="26" cy="-16" r="4" fill="white"/>
+    
+    <!-- Cheek blush -->
+    <ellipse cx="-43" cy="0" rx="12" ry="10" fill="#FF9BB0" opacity="0.4"/>
+    <ellipse cx="43" cy="0" rx="12" ry="10" fill="#FF9BB0" opacity="0.4"/>
+    
+    <!-- Pig tail (curly) -->
+    <path d="M 70 0 Q 75 -5 78 -2 Q 81 1 84 -1 Q 87 -3 90 0" fill="none" stroke="#FF9BB0" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Briefcase (Portable representation) - Right -->
+  <g id="briefcase" transform="translate(590, 185)">
+    <!-- Shadow -->
+    <rect x="5" y="5" width="100" height="70" rx="6" fill="#000" opacity="0.2"/>
+    <!-- Main briefcase body -->
+    <rect x="0" y="0" width="100" height="70" rx="6" fill="url(#briefcaseGradient)" stroke="#2E4B8F" stroke-width="4"/>
+    <!-- Briefcase lock/clasp -->
+    <rect x="42" y="-5" width="16" height="10" rx="2" fill="#2E4B8F"/>
+    <!-- Briefcase handle -->
+    <path d="M 35 0 Q 50 -18 65 0" fill="none" stroke="#2E4B8F" stroke-width="5" stroke-linecap="round"/>
+    <!-- Briefcase details -->
+    <line x1="50" y1="15" x2="50" y2="55" stroke="#5B8FE8" stroke-width="3" opacity="0.6"/>
+    <rect x="12" y="30" width="76" height="5" rx="2" fill="#5B8FE8" opacity="0.4"/>
+    <!-- Corner details -->
+    <circle cx="12" cy="12" r="4" fill="#2E4B8F" opacity="0.3"/>
+    <circle cx="88" cy="12" r="4" fill="#2E4B8F" opacity="0.3"/>
+    <circle cx="12" cy="58" r="4" fill="#2E4B8F" opacity="0.3"/>
+    <circle cx="88" cy="58" r="4" fill="#2E4B8F" opacity="0.3"/>
+    <!-- Lock detail -->
+    <circle cx="50" cy="35" r="6" fill="#2E4B8F" opacity="0.5"/>
+  </g>
+</svg>

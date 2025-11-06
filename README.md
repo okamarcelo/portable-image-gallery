@@ -1,5 +1,9 @@
 # Portable Image Gallery
 
+<p align="center">
+  <img src="assets/pig-readme-banner.svg" alt="Portable Image Gallery - PIG" width="800"/>
+</p>
+
 A lightweight, portable WPF image viewer with slideshow capabilities, mosaic view, and internationalization support.
 
 ![.NET](https://img.shields.io/badge/.NET-8.0-blue)
