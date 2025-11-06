@@ -32,6 +32,7 @@ public partial class MainWindow : Window
         private readonly ImageLoaderService _imageLoaderService;
         private readonly NavigationService _navigationService;
         private readonly DisplayService _displayService;
+        private readonly TransitionAnimationService _transitionAnimationService;
 
         // UI state
         // _currentIndex is now managed by NavigationService
@@ -50,7 +51,8 @@ public partial class MainWindow : Window
         WindowStateService windowStateService,
         ImageLoaderService imageLoaderService,
         NavigationService navigationService,
-        DisplayService displayService)
+        DisplayService displayService,
+        TransitionAnimationService transitionAnimationService)
     {
         try
         {
@@ -67,6 +69,7 @@ public partial class MainWindow : Window
             this._imageLoaderService = imageLoaderService;
             this._navigationService = navigationService;
             this._displayService = displayService;
+            this._transitionAnimationService = transitionAnimationService;
             
             _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
@@ -177,6 +180,8 @@ public partial class MainWindow : Window
                 _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
             _navigationService.FlashSideRequested += isRight => 
                 _ = _displayService.FlashSideAsync(isRight, RightFlash, LeftFlash);
+            _navigationService.SlideTransitionRequested += () =>
+                _ = _transitionAnimationService.AnimateSlideLeftAsync(MosaicDisplay);
 
             // DisplayService events
             _displayService.LogMessageRequested += msg => _debugLogger.Log(msg);
