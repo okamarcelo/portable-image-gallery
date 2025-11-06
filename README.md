@@ -1,4 +1,4 @@
-# Portable Image Gallery
+# Portable Image Gallery (P.I.G.)
 
 <p align="center">
   <img src="assets/pig-readme-banner.svg" alt="Portable Image Gallery - PIG" width="800"/>
@@ -15,11 +15,11 @@ A lightweight, portable WPF image viewer with slideshow capabilities, mosaic vie
 - ??? **Multiple Image Formats**: PNG, JPG, JPEG, HEIC, HEIF, WebP
 - ?? **Slideshow Mode**: Automatic image rotation with adjustable speed
 - ?? **Mosaic View**: Display 1, 2, 4, 9, or 16 images simultaneously
-- ?? **Lazy Loading**: Efficient memory management with sliding window cache
+- ? **Lazy Loading**: Efficient memory management with sliding window cache
 - ?? **Internationalization**: Multi-language support (English, Portuguese)
 - ??? **Fullscreen Support**: Immersive viewing experience
-- ? **Portable**: Single executable file, no installation required
-- ?? **CLI Support**: Command-line interface for automation
+- ?? **Portable**: Single executable file, no installation required
+- ??? **CLI Support**: Command-line interface for automation
 - ?? **Zoom Functionality**: Zoom in/out on images
 - ?? **Debug Console**: Built-in logging for troubleshooting
 
