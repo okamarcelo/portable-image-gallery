@@ -33,6 +33,7 @@ public partial class MainWindow : Window
         private readonly NavigationService _navigationService;
         private readonly DisplayService _displayService;
         private readonly TransitionAnimationService _transitionAnimationService;
+        private readonly SlideTransitionService _slideTransitionService;
 
         // UI state
         // _currentIndex is now managed by NavigationService
@@ -52,7 +53,8 @@ public partial class MainWindow : Window
         ImageLoaderService imageLoaderService,
         NavigationService navigationService,
         DisplayService displayService,
-        TransitionAnimationService transitionAnimationService)
+        TransitionAnimationService transitionAnimationService,
+        SlideTransitionService slideTransitionService)
     {
         try
         {
@@ -70,6 +72,7 @@ public partial class MainWindow : Window
             this._navigationService = navigationService;
             this._displayService = displayService;
             this._transitionAnimationService = transitionAnimationService;
+            this._slideTransitionService = slideTransitionService;
             
             _logger.LogInformation(Strings.SLog_MainWindowInitializing);
             InitializeComponent();
@@ -175,16 +178,13 @@ public partial class MainWindow : Window
 
             // NavigationService events
             _navigationService.ImagesDisplayRequested += images => 
-                Dispatcher.Invoke(() => MosaicDisplay.ItemsSource = images);
+                Dispatcher.Invoke(async () => await _slideTransitionService.UpdateItemsAsync(images));
             _navigationService.MosaicLayoutUpdateRequested += () => 
                 _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
             _navigationService.FlashSideRequested += isRight => 
                 _ = _displayService.FlashSideAsync(isRight, RightFlash, LeftFlash);
             _navigationService.SlideTransitionRequested += () =>
-            {
-                // TODO: Re-enable when SlidingItemsControl is working
-                //_transitionAnimationService.EnableTransitionOnce(MosaicDisplay);
-            };
+                _slideTransitionService.EnableTransitionOnce();
 
             // DisplayService events
             _displayService.LogMessageRequested += msg => _debugLogger.Log(msg);
@@ -200,6 +200,9 @@ public partial class MainWindow : Window
             _debugLogger.Initialize(DebugConsole, LogTextBlock);
             _pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
             _indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
+            
+            // Register the MosaicDisplay control with the slide transition service
+            _slideTransitionService.RegisterControl(MosaicDisplay);
             
             // Wait for MosaicDisplay to be loaded and initialized
             if (MosaicDisplay != null && !MosaicDisplay.IsLoaded)

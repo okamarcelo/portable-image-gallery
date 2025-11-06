@@ -152,6 +152,7 @@ public partial class App : Application
         services.AddSingleton<NavigationService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<TransitionAnimationService>();
+        services.AddSingleton<SlideTransitionService>();
         
         // Add MainWindow as transient (created per request)
         services.AddTransient<MainWindow>();
