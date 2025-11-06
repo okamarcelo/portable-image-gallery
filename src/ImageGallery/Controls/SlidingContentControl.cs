@@ -98,6 +98,24 @@ namespace ImageGallery.Controls
             {
                 System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Building visual tree");
                 BuildVisualTree();
+                
+                // Apply any ItemsSource that was set before the control loaded
+                System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] After BuildVisualTree - _previousItems={(_previousItems == null ? "null" : "notNull")}, ItemsSource={(ItemsSource == null ? "null" : "notNull")}");
+                
+                if (_previousItems != null && _currentItemsControl != null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Applying deferred ItemsSource from _previousItems");
+                    _currentItemsControl.ItemsSource = _previousItems;
+                }
+                else if (ItemsSource != null && _currentItemsControl != null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Applying ItemsSource from property");
+                    _currentItemsControl.ItemsSource = ItemsSource;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] WARNING: No ItemsSource to apply!");
+                }
             }
         }
 
@@ -209,11 +227,17 @@ namespace ImageGallery.Controls
 
         private void OnItemsSourceChanged(IEnumerable? oldItems, IEnumerable? newItems)
         {
-            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] OnItemsSourceChanged: old={(oldItems == null ? "null" : "notNull")}, new={(newItems == null ? "null" : "notNull")}, EnableTransition={EnableTransition}, _isTransitioning={_isTransitioning}");
+            var newCount = 0;
+            if (newItems != null)
+            {
+                foreach (var _ in newItems) newCount++;
+            }
+            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] OnItemsSourceChanged: old={(oldItems == null ? "null" : "notNull")}, new={(newItems == null ? "null" : $"{newCount} items")}, EnableTransition={EnableTransition}, _isTransitioning={_isTransitioning}");
+            System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] _currentItemsControl={((_currentItemsControl == null ? "null" : "notNull"))}, _previousItemsControl={((_previousItemsControl == null ? "null" : "notNull"))}, _rootGrid={((_rootGrid == null ? "null" : "notNull"))}");
             
             if (_currentItemsControl == null || _previousItemsControl == null || _rootGrid == null)
             {
-                System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Controls not initialized yet, saving items for later");
+                System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Controls not initialized yet, saving items to _previousItems for later");
                 _previousItems = newItems;
                 return;
             }
@@ -224,6 +248,7 @@ namespace ImageGallery.Controls
                 System.Diagnostics.Debug.WriteLine("[SlidingItemsControl] Updating instantly (no transition)");
                 _currentItemsControl.ItemsSource = newItems;
                 _previousItems = newItems;
+                System.Diagnostics.Debug.WriteLine($"[SlidingItemsControl] Set ItemsSource on _currentItemsControl, items count: {newCount}");
                 return;
             }
 

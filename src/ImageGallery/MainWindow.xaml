@@ -29,29 +29,33 @@
     </WindowChrome.WindowChrome>
     <Grid>
         <!-- Mosaic Grid with Sliding Transition -->
-        <controls:SlidingItemsControl x:Name="MosaicDisplay"
-                                       MouseWheel="MosaicDisplay_MouseWheel"
-                                       MouseLeftButtonDown="MosaicDisplay_MouseLeftButtonDown"
-                                       MouseLeftButtonUp="MosaicDisplay_MouseLeftButtonUp"
-                                       MouseRightButtonDown="MosaicDisplay_MouseRightButtonDown"
-                                       MouseRightButtonUp="MosaicDisplay_MouseRightButtonUp"
-                                       MouseMove="MosaicDisplay_MouseMove"
-                                       TransitionDuration="0:0:0.4"
-                                       EnableTransition="False">
-            <controls:SlidingItemsControl.ItemsPanel>
+        <ItemsControl x:Name="MosaicDisplay"
+                      MouseWheel="MosaicDisplay_MouseWheel"
+                      MouseLeftButtonDown="MosaicDisplay_MouseLeftButtonDown"
+                      MouseLeftButtonUp="MosaicDisplay_MouseLeftButtonUp"
+                      MouseRightButtonDown="MosaicDisplay_MouseRightButtonDown"
+                      MouseRightButtonUp="MosaicDisplay_MouseRightButtonUp"
+                      MouseMove="MosaicDisplay_MouseMove">
+            <ItemsControl.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ItemsControl.RenderTransform>
+            <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid x:Name="MosaicGrid" Rows="1" Columns="1"/>
                 </ItemsPanelTemplate>
-            </controls:SlidingItemsControl.ItemsPanel>
-            <controls:SlidingItemsControl.ItemTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Image Source="{Binding}" 
                            Stretch="Uniform" 
                            HorizontalAlignment="Center" 
                            VerticalAlignment="Center"/>
                 </DataTemplate>
-            </controls:SlidingItemsControl.ItemTemplate>
-        </controls:SlidingItemsControl>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
         
         <!-- Loading Overlay -->
         <Border x:Name="LoadingOverlay" 

@@ -177,11 +177,14 @@ public partial class MainWindow : Window
             _navigationService.ImagesDisplayRequested += images => 
                 Dispatcher.Invoke(() => MosaicDisplay.ItemsSource = images);
             _navigationService.MosaicLayoutUpdateRequested += () => 
-                _displayService.UpdateMosaicLayout(MosaicDisplay.CurrentItemsControl, ActualWidth, ActualHeight);
+                _displayService.UpdateMosaicLayout(MosaicDisplay, ActualWidth, ActualHeight);
             _navigationService.FlashSideRequested += isRight => 
                 _ = _displayService.FlashSideAsync(isRight, RightFlash, LeftFlash);
             _navigationService.SlideTransitionRequested += () =>
-                _transitionAnimationService.EnableTransitionOnce(MosaicDisplay);
+            {
+                // TODO: Re-enable when SlidingItemsControl is working
+                //_transitionAnimationService.EnableTransitionOnce(MosaicDisplay);
+            };
 
             // DisplayService events
             _displayService.LogMessageRequested += msg => _debugLogger.Log(msg);
@@ -198,10 +201,34 @@ public partial class MainWindow : Window
             _pauseController.Initialize(PausePlayIcon, PauseBar1, PauseBar2, PlayTriangle);
             _indicatorManager.Initialize(SpeedIndicator, SpeedText, ZoomIndicator, ZoomText);
             
-            // Initialize zoom controller with transforms from the sliding control
-            if (MosaicDisplay.CurrentScaleTransform != null && MosaicDisplay.CurrentTranslateTransform != null)
+            // Wait for MosaicDisplay to be loaded and initialized
+            if (MosaicDisplay != null && !MosaicDisplay.IsLoaded)
             {
-                _zoomController.Initialize(MosaicDisplay.CurrentScaleTransform, MosaicDisplay.CurrentTranslateTransform);
+                _logger.LogDebug("MosaicDisplay not loaded yet, waiting for Loaded event");
+                var tcs = new TaskCompletionSource<bool>();
+                RoutedEventHandler handler = null;
+                handler = (s, args) =>
+                {
+                    MosaicDisplay.Loaded -= handler;
+                    tcs.SetResult(true);
+                };
+                MosaicDisplay.Loaded += handler;
+                await tcs.Task;
+                _logger.LogDebug("MosaicDisplay loaded");
+            }
+            
+            // Initialize zoom controller with transforms from the ItemsControl
+            var scaleTransform = ((TransformGroup)MosaicDisplay.RenderTransform).Children[0] as ScaleTransform;
+            var translateTransform = ((TransformGroup)MosaicDisplay.RenderTransform).Children[1] as TranslateTransform;
+            
+            if (scaleTransform != null && translateTransform != null)
+            {
+                _zoomController.Initialize(scaleTransform, translateTransform);
+                _logger.LogDebug("ZoomController initialized with transforms");
+            }
+            else
+            {
+                _logger.LogWarning("Could not initialize ZoomController: transforms not found");
             }
             
             _windowStateService.Initialize(this);
