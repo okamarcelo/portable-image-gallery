@@ -238,9 +238,10 @@ public class ImageCache : IDisposable
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.DecodePixelWidth = 1920; // Limit decoded size to optimize memory usage
                 bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
                 bitmap.EndInit();
-                bitmap.Freeze(); // Make it thread-safe
+                bitmap.Freeze(); // Make it thread-safe for cross-thread access
                 _logger.LogTrace("LoadImageAsync SUCCESS for: {FileName}", Path.GetFileName(filePath));
                 return bitmap;
             }
