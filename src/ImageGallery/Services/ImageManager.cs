@@ -246,11 +246,13 @@ public class ImageManager
                     _logger.LogInformation($"Found {allFiles.Count} files to import");
                     ImportProgressChanged?.Invoke(0, allFiles.Count, 0);
 
-                    // Import files with duplicate detection
+                    // Import files with duplicate detection - compute hashes once per file
                     var existingHashes = new HashSet<string>();
                     var existingFiles = Directory.GetFiles(appDirectory)
-                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()));
+                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                        .ToList();
 
+                    // Build hash set from existing files
                     foreach (var file in existingFiles)
                     {
                         try
@@ -266,6 +268,12 @@ public class ImageManager
                     {
                         try
                         {
+                            // Skip if source file is already in destination (avoid duplicate hash computation)
+                            if (existingFiles.Contains(sourceFile))
+                            {
+                                continue;
+                            }
+
                             var hash = GetFileHash(sourceFile);
                             if (!existingHashes.Contains(hash))
                             {
