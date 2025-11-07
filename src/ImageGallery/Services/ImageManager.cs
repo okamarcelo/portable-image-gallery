@@ -260,7 +260,10 @@ public class ImageManager
                             var hash = GetFileHash(file);
                             existingHashes.Add(hash);
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to compute hash for existing file: {FileName}", Path.GetFileName(file));
+                        }
                     }
 
                     var importErrors = 0;
