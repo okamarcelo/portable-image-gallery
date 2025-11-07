@@ -16,6 +16,31 @@ namespace ImageGallery.Services;
 /// </summary>
 public class ImageCache : IDisposable
 {
+    /// <summary>
+    /// Default maximum number of images to keep in memory
+    /// </summary>
+    private const int DefaultCacheSize = 64;
+    
+    /// <summary>
+    /// Default number of images to preload ahead of current position
+    /// </summary>
+    private const int DefaultPreloadAhead = 16;
+    
+    /// <summary>
+    /// Default number of images to keep cached behind current position
+    /// </summary>
+    private const int DefaultKeepBehind = 8;
+    
+    /// <summary>
+    /// Maximum pixel width for decoded bitmaps to optimize memory usage
+    /// </summary>
+    private const int MaxDecodePixelWidth = 1920;
+    
+    /// <summary>
+    /// Maximum degree of parallelism for concurrent image loading operations
+    /// </summary>
+    private const int MaxDegreeOfParallelism = 4;
+
     private readonly ILogger<ImageCache> _logger;
     private readonly ConcurrentDictionary<int, BitmapImage> _cache = new();
     private readonly ConcurrentDictionary<int, string> _imageFilePaths = new();
@@ -33,10 +58,10 @@ public class ImageCache : IDisposable
     /// Creates a new image cache with the specified parameters.
     /// </summary>
     /// <param name="logger">Logger instance</param>
-    /// <param name="cacheSize">Maximum number of images to keep in memory (default: 64)</param>
-    /// <param name="preloadAhead">Number of images to preload ahead of current position (default: 16)</param>
-    /// <param name="keepBehind">Number of images to keep behind current position (default: 8)</param>
-    public ImageCache(ILogger<ImageCache> logger, int cacheSize = 64, int preloadAhead = 16, int keepBehind = 8)
+    /// <param name="cacheSize">Maximum number of images to keep in memory</param>
+    /// <param name="preloadAhead">Number of images to preload ahead of current position</param>
+    /// <param name="keepBehind">Number of images to keep behind current position</param>
+    public ImageCache(ILogger<ImageCache> logger, int cacheSize = DefaultCacheSize, int preloadAhead = DefaultPreloadAhead, int keepBehind = DefaultKeepBehind)
     {
         _logger = logger;
         _cacheSize = cacheSize;
@@ -164,7 +189,7 @@ public class ImageCache : IDisposable
 
         await Parallel.ForEachAsync(indicesToLoad, new ParallelOptions 
         { 
-            MaxDegreeOfParallelism = 4 
+            MaxDegreeOfParallelism = MaxDegreeOfParallelism 
         }, 
         async (index, cancellationToken) =>
         {
@@ -238,7 +263,7 @@ public class ImageCache : IDisposable
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.DecodePixelWidth = 1920; // Limit decoded size to optimize memory usage
+                bitmap.DecodePixelWidth = MaxDecodePixelWidth; // Limit decoded size to optimize memory usage
                 bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
                 bitmap.EndInit();
                 bitmap.Freeze(); // Make it thread-safe for cross-thread access

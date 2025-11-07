@@ -16,9 +16,14 @@ namespace ImageGallery.Services
     /// </summary>
     public class SlideTransitionService
     {
+        /// <summary>
+        /// Duration of the slide transition animation in milliseconds
+        /// </summary>
+        private const int TransitionDurationMs = 400;
+        
         private bool _isTransitioning = false;
         private bool _transitionEnabled = false;
-        private readonly TimeSpan _transitionDuration = TimeSpan.FromMilliseconds(400);
+        private readonly TimeSpan _transitionDuration = TimeSpan.FromMilliseconds(TransitionDurationMs);
         private ItemsControl? _trackedControl;
         private IEnumerable? _pendingItems;
 
