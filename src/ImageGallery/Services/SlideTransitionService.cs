@@ -50,20 +50,20 @@ namespace ImageGallery.Services
                 return;
             }
 
-            // Count items - only transition if displaying single image
-            var itemCount = newItems.Cast<object>().Count();
-            var shouldTransition = _transitionEnabled && !_isTransitioning && itemCount == 1;
+            // Materialize collection once to avoid multiple enumerations
+            var itemsList = newItems.Cast<object>().ToList();
+            var shouldTransition = _transitionEnabled && !_isTransitioning && itemsList.Count == 1;
 
             if (!shouldTransition)
             {
                 // No transition - just update directly
-                _trackedControl.ItemsSource = newItems;
+                _trackedControl.ItemsSource = itemsList;
                 _transitionEnabled = false; // Reset flag
                 return;
             }
 
             // Perform transition
-            await AnimateTransitionAsync(newItems);
+            await AnimateTransitionAsync(itemsList);
         }
 
         private async Task AnimateTransitionAsync(IEnumerable newItems)
