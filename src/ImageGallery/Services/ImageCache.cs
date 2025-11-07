@@ -157,29 +157,28 @@ public class ImageCache : IDisposable
             _logger.LogTrace("Evicted {EvictedCount} images from cache (freed memory)", keysToRemove.Count);
         }
 
-        // Preload images in the window that aren't cached
-        var tasks = new List<Task>();
-        for (var i = windowStart; i <= windowEnd; i++)
-        {
-            if (!_cache.ContainsKey(i))
-            {
-                var index = i; // Capture for closure
-                tasks.Add(Task.Run(async () =>
-                {
-                    var image = await LoadImageAsync(_imageFilePaths[index]);
-                    if (image != null)
-                    {
-                        // Only add if still within cache limit and not already present
-                        if (!_cache.ContainsKey(index) && _cache.Count < _cacheSize)
-                        {
-                            _cache.TryAdd(index, image);
-                        }
-                    }
-                }));
-            }
-        }
+        // Preload images in the window that aren't cached with controlled parallelism
+        var indicesToLoad = Enumerable.Range(windowStart, windowEnd - windowStart + 1)
+            .Where(i => !_cache.ContainsKey(i))
+            .ToList();
 
-        await Task.WhenAll(tasks);
+        await Parallel.ForEachAsync(indicesToLoad, new ParallelOptions 
+        { 
+            MaxDegreeOfParallelism = 4 
+        }, 
+        async (index, cancellationToken) =>
+        {
+            var image = await LoadImageAsync(_imageFilePaths[index]);
+            if (image != null)
+            {
+                // Only add if still within cache limit and not already present
+                if (!_cache.ContainsKey(index) && _cache.Count < _cacheSize)
+                {
+                    _cache.TryAdd(index, image);
+                }
+            }
+        });
+
         _logger.LogTrace("PreloadWindow: [{WindowStart}-{WindowEnd}], in cache: {CacheCount}/{CacheSize} images", 
             windowStart, windowEnd, _cache.Count, _cacheSize);
     }
