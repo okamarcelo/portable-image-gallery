@@ -19,16 +19,16 @@ namespace ImageGallery.Services
         private Visibility _loadingOverlayVisibility;
         private Visibility _loadingProgressStackVisibility;
         private Visibility _importProgressStackVisibility;
-        private string _loadingText;
+        private string _loadingText = string.Empty;
 
         // Events for UI updates
-        public event Action<Visibility> LoadingOverlayVisibilityChanged;
-        public event Action<Visibility> LoadingProgressStackVisibilityChanged;
-        public event Action<Visibility> ImportProgressStackVisibilityChanged;
-        public event Action<string> LoadingTextChanged;
-        public event Action ShuffleImagesRequested;
-        public event Action<int> ShowImageRequested;
-        public event Action SlideshowStartRequested;
+        public event Action<Visibility>? LoadingOverlayVisibilityChanged;
+        public event Action<Visibility>? LoadingProgressStackVisibilityChanged;
+        public event Action<Visibility>? ImportProgressStackVisibilityChanged;
+        public event Action<string>? LoadingTextChanged;
+        public event Action? ShuffleImagesRequested;
+        public event Action<int>? ShowImageRequested;
+        public event Action? SlideshowStartRequested;
 
         public ImageLoaderService(
             ILogger<ImageLoaderService> logger,

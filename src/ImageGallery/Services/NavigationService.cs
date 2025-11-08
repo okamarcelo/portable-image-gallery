@@ -24,7 +24,7 @@ namespace ImageGallery.Services
 
         // Events for UI updates
         public event Action<List<BitmapImage>>? ImagesDisplayRequested;
-        public event Action MosaicLayoutUpdateRequested;
+        public event Action? MosaicLayoutUpdateRequested;
         public event Action<bool>? FlashSideRequested; // true = right, false = left
         public event Action<string>? LogMessageRequested;
         public event Action? SlideTransitionRequested; // Request slide animation for automatic navigation

@@ -88,7 +88,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, Strings.SLog_FailedToInitializeMainWindow);
+            _logger?.LogCritical(ex, Strings.SLog_FailedToInitializeMainWindow);
             MessageBox.Show(string.Format(Strings.Error_InitializationMessage, ex.Message), 
                 Strings.Error_InitializationTitle, 
                 MessageBoxButton.OK, MessageBoxImage.Error);
@@ -209,10 +209,11 @@ public partial class MainWindow : Window
             {
                 _logger.LogDebug("MosaicDisplay not loaded yet, waiting for Loaded event");
                 var tcs = new TaskCompletionSource<bool>();
-                RoutedEventHandler handler = null;
+                RoutedEventHandler? handler = null;
                 handler = (s, args) =>
                 {
-                    MosaicDisplay.Loaded -= handler;
+                    if (handler != null)
+                        MosaicDisplay.Loaded -= handler;
                     tcs.SetResult(true);
                 };
                 MosaicDisplay.Loaded += handler;
@@ -221,17 +222,25 @@ public partial class MainWindow : Window
             }
             
             // Initialize zoom controller with transforms from the ItemsControl
-            var scaleTransform = ((TransformGroup)MosaicDisplay.RenderTransform).Children[0] as ScaleTransform;
-            var translateTransform = ((TransformGroup)MosaicDisplay.RenderTransform).Children[1] as TranslateTransform;
-            
-            if (scaleTransform != null && translateTransform != null)
+            if (MosaicDisplay?.RenderTransform is TransformGroup transformGroup && 
+                transformGroup.Children.Count >= 2)
             {
-                _zoomController.Initialize(scaleTransform, translateTransform);
-                _logger.LogDebug("ZoomController initialized with transforms");
+                var scaleTransform = transformGroup.Children[0] as ScaleTransform;
+                var translateTransform = transformGroup.Children[1] as TranslateTransform;
+                
+                if (scaleTransform != null && translateTransform != null)
+                {
+                    _zoomController.Initialize(scaleTransform, translateTransform);
+                    _logger.LogDebug("ZoomController initialized with transforms");
+                }
+                else
+                {
+                    _logger.LogWarning("Could not initialize ZoomController: transforms not found");
+                }
             }
             else
             {
-                _logger.LogWarning("Could not initialize ZoomController: transforms not found");
+                _logger.LogWarning("Could not initialize ZoomController: transform group not found or invalid");
             }
             
             _windowStateService.Initialize(this);

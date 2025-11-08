@@ -25,7 +25,6 @@ namespace ImageGallery.Services
         private bool _transitionEnabled = false;
         private readonly TimeSpan _transitionDuration = TimeSpan.FromMilliseconds(TransitionDurationMs);
         private ItemsControl? _trackedControl;
-        private IEnumerable? _pendingItems;
 
         /// <summary>
         /// Enable the transition for the next item change
