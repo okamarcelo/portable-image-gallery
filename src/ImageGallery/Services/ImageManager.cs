@@ -189,123 +189,168 @@ public class ImageManager
                 try
                 {
                     var appDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    var searchMessage = string.IsNullOrWhiteSpace(_folderPattern)
-                        ? "Searching for images in all subdirectories..."
-                        : $"Searching for '{_folderPattern}' folders...";
-                    _logger.LogInformation(searchMessage);
-
-                    var matchingFolders = new List<string>();
-                    var accessDeniedCount = 0;
-                    FindMatchingFoldersRecursive(appDirectory, matchingFolders, ref accessDeniedCount);
-
-                    if (accessDeniedCount > 0)
-                    {
-                        _logger.LogInformation($"Access denied to {accessDeniedCount} folder(s)");
-                    }
-
-                    if (matchingFolders.Count == 0)
-                    {
-                        var notFoundMessage = string.IsNullOrWhiteSpace(_folderPattern)
-                            ? "No subdirectories found"
-                            : $"No '{_folderPattern}' folders found";
-                        _logger.LogInformation(notFoundMessage);
+                    var matchingFolders = FindMatchingFolders(appDirectory);
+                    if (matchingFolders == null || matchingFolders.Count == 0)
                         return;
-                    }
 
-                    var foundMessage = string.IsNullOrWhiteSpace(_folderPattern)
-                        ? $"Found {matchingFolders.Count} subdirectories"
-                        : $"Found {matchingFolders.Count} '{_folderPattern}' folders";
-                    _logger.LogInformation(foundMessage);
-
-                    // Collect all image files
-                    var allFiles = new List<string>();
-                    foreach (var folder in matchingFolders)
-                    {
-                        try
-                        {
-                            var files = Directory.GetFiles(folder)
-                                .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
-                                .ToList();
-                            allFiles.AddRange(files);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError($"Error reading folder {folder}: {ex.Message}");
-                        }
-                    }
-
-                    if (allFiles.Count == 0)
-                    {
-                        var noImagesMessage = string.IsNullOrWhiteSpace(_folderPattern)
-                            ? "No images found in subdirectories"
-                            : $"No images found in '{_folderPattern}' folders";
-                        _logger.LogInformation(noImagesMessage);
+                    var allFiles = CollectImageFiles(matchingFolders);
+                    if (allFiles == null || allFiles.Count == 0)
                         return;
-                    }
 
                     _logger.LogInformation($"Found {allFiles.Count} files to import");
                     ImportProgressChanged?.Invoke(0, allFiles.Count, 0);
 
-                    // Import files with duplicate detection - compute hashes once per file
-                    var existingHashes = new HashSet<string>();
-                    var existingFiles = Directory.GetFiles(appDirectory)
-                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
-                        .ToList();
-
-                    // Build hash set from existing files
-                    foreach (var file in existingFiles)
-                    {
-                        try
-                        {
-                            var hash = GetFileHash(file);
-                            existingHashes.Add(hash);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Failed to compute hash for existing file: {FileName}", Path.GetFileName(file));
-                        }
-                    }
-
-                    var importErrors = 0;
-                    foreach (var sourceFile in allFiles)
-                    {
-                        try
-                        {
-                            // Skip if source file is already in destination (avoid duplicate hash computation)
-                            if (existingFiles.Contains(sourceFile))
-                            {
-                                continue;
-                            }
-
-                            var hash = GetFileHash(sourceFile);
-                            if (!existingHashes.Contains(hash))
-                            {
-                                var extension = Path.GetExtension(sourceFile);
-                                var newFileName = $"{Guid.NewGuid()}{extension}";
-                                var destPath = Path.Combine(appDirectory, newFileName);
-                                File.Copy(sourceFile, destPath, false);
-                                existingHashes.Add(hash);
-                                importedCount++;
-                                _logger.LogInformation($"Imported: {Path.GetFileName(sourceFile)} -> {newFileName}");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            importErrors++;
-                            _logger.LogError($"Error importing {Path.GetFileName(sourceFile)}: {ex.Message}");
-                        }
-
-                        ImportProgressChanged?.Invoke(importedCount + importErrors, allFiles.Count, importErrors);
-                    }
-
-                    _logger.LogInformation($"Import complete: {importedCount} files imported, {importErrors} errors");
+                    // Import files with duplicate detection
+                    var existingHashes = BuildExistingFileHashSet(appDirectory);
+                    importedCount = ImportNewFiles(appDirectory, allFiles, existingHashes);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Error during import: {ex.Message}");
+                    _logger.LogError(ex, "Error during import");
                 }
             });
 
+            return importedCount;
+        }
+
+        /// <summary>
+        /// Find all folders matching the configured pattern.
+        /// </summary>
+        private List<string>? FindMatchingFolders(string appDirectory)
+        {
+            var searchMessage = string.IsNullOrWhiteSpace(_folderPattern)
+                ? "Searching for images in all subdirectories..."
+                : $"Searching for '{_folderPattern}' folders...";
+            _logger.LogInformation(searchMessage);
+
+            var matchingFolders = new List<string>();
+            var accessDeniedCount = 0;
+            FindMatchingFoldersRecursive(appDirectory, matchingFolders, ref accessDeniedCount);
+
+            if (accessDeniedCount > 0)
+            {
+                _logger.LogInformation($"Access denied to {accessDeniedCount} folder(s)");
+            }
+
+            if (matchingFolders.Count == 0)
+            {
+                var notFoundMessage = string.IsNullOrWhiteSpace(_folderPattern)
+                    ? "No subdirectories found"
+                    : $"No '{_folderPattern}' folders found";
+                _logger.LogInformation(notFoundMessage);
+                return null;
+            }
+
+            var foundMessage = string.IsNullOrWhiteSpace(_folderPattern)
+                ? $"Found {matchingFolders.Count} subdirectories"
+                : $"Found {matchingFolders.Count} '{_folderPattern}' folders";
+            _logger.LogInformation(foundMessage);
+
+            return matchingFolders;
+        }
+
+        /// <summary>
+        /// Collect all image files from the specified folders.
+        /// </summary>
+        private List<string>? CollectImageFiles(List<string> folders)
+        {
+            var allFiles = new List<string>();
+            foreach (var folder in folders)
+            {
+                try
+                {
+                    var files = Directory.GetFiles(folder)
+                        .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                        .ToList();
+                    allFiles.AddRange(files);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error reading folder {folder}: {ex.Message}");
+                }
+            }
+
+            if (allFiles.Count == 0)
+            {
+                var noImagesMessage = string.IsNullOrWhiteSpace(_folderPattern)
+                    ? "No images found in subdirectories"
+                    : $"No images found in '{_folderPattern}' folders";
+                _logger.LogInformation(noImagesMessage);
+                return null;
+            }
+
+            return allFiles;
+        }
+
+        /// <summary>
+        /// Build a hash set of existing files in the destination directory to detect duplicates.
+        /// </summary>
+        private HashSet<string> BuildExistingFileHashSet(string appDirectory)
+        {
+            var existingHashes = new HashSet<string>();
+            var existingFiles = Directory.GetFiles(appDirectory)
+                .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                .ToList();
+
+            foreach (var file in existingFiles)
+            {
+                try
+                {
+                    var hash = GetFileHash(file);
+                    existingHashes.Add(hash);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to compute hash for existing file: {FileName}", Path.GetFileName(file));
+                }
+            }
+
+            return existingHashes;
+        }
+
+        /// <summary>
+        /// Import new files that don't already exist (based on hash comparison).
+        /// </summary>
+        private int ImportNewFiles(string appDirectory, List<string> allFiles, HashSet<string> existingHashes)
+        {
+            var importedCount = 0;
+            var importErrors = 0;
+            var existingFiles = Directory.GetFiles(appDirectory)
+                .Where(f => _supportedExtensions.Contains(Path.GetExtension(f).ToLower()))
+                .ToList();
+
+            foreach (var sourceFile in allFiles)
+            {
+                try
+                {
+                    // Skip if source file is already in destination (avoid duplicate hash computation)
+                    if (existingFiles.Contains(sourceFile))
+                    {
+                        continue;
+                    }
+
+                    var hash = GetFileHash(sourceFile);
+                    if (!existingHashes.Contains(hash))
+                    {
+                        var extension = Path.GetExtension(sourceFile);
+                        var newFileName = $"{Guid.NewGuid()}{extension}";
+                        var destPath = Path.Combine(appDirectory, newFileName);
+                        File.Copy(sourceFile, destPath, false);
+                        existingHashes.Add(hash);
+                        importedCount++;
+                        _logger.LogInformation($"Imported: {Path.GetFileName(sourceFile)} -> {newFileName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    importErrors++;
+                    _logger.LogError($"Error importing {Path.GetFileName(sourceFile)}: {ex.Message}");
+                }
+
+                ImportProgressChanged?.Invoke(importedCount + importErrors, allFiles.Count, importErrors);
+            }
+
+            _logger.LogInformation($"Import complete: {importedCount} files imported, {importErrors} errors");
             return importedCount;
         }
 

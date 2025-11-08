@@ -164,10 +164,33 @@ public class ImageCache : IDisposable
             return;
 
         // Calculate window range
-        var windowStart = Math.Max(0, currentIndex - _keepBehind);
-        var windowEnd = Math.Min(_imageFilePaths.Count - 1, currentIndex + paneCount + _preloadAhead);
+        var (windowStart, windowEnd) = CalculateWindowRange(currentIndex, paneCount);
         
         // Evict images outside the window
+        EvictImagesOutsideWindow(windowStart, windowEnd);
+
+        // Preload images in the window that aren't cached with controlled parallelism
+        await PreloadMissingImagesInWindowAsync(windowStart, windowEnd);
+
+        _logger.LogTrace("PreloadWindow: [{WindowStart}-{WindowEnd}], in cache: {CacheCount}/{CacheSize} images", 
+            windowStart, windowEnd, _cache.Count, _cacheSize);
+    }
+
+    /// <summary>
+    /// Calculate the window range for preloading based on current position and pane count.
+    /// </summary>
+    private (int windowStart, int windowEnd) CalculateWindowRange(int currentIndex, int paneCount)
+    {
+        var windowStart = Math.Max(0, currentIndex - _keepBehind);
+        var windowEnd = Math.Min(_imageFilePaths.Count - 1, currentIndex + paneCount + _preloadAhead);
+        return (windowStart, windowEnd);
+    }
+
+    /// <summary>
+    /// Evict cached images that fall outside the specified window range.
+    /// </summary>
+    private void EvictImagesOutsideWindow(int windowStart, int windowEnd)
+    {
         var keysToRemove = _cache.Keys
             .Where(k => k < windowStart || k > windowEnd)
             .ToList();
@@ -181,8 +204,13 @@ public class ImageCache : IDisposable
         {
             _logger.LogTrace("Evicted {EvictedCount} images from cache (freed memory)", keysToRemove.Count);
         }
+    }
 
-        // Preload images in the window that aren't cached with controlled parallelism
+    /// <summary>
+    /// Preload images within the window that aren't already cached, using controlled parallelism.
+    /// </summary>
+    private async Task PreloadMissingImagesInWindowAsync(int windowStart, int windowEnd)
+    {
         var indicesToLoad = Enumerable.Range(windowStart, windowEnd - windowStart + 1)
             .Where(i => !_cache.ContainsKey(i))
             .ToList();
@@ -203,9 +231,6 @@ public class ImageCache : IDisposable
                 }
             }
         });
-
-        _logger.LogTrace("PreloadWindow: [{WindowStart}-{WindowEnd}], in cache: {CacheCount}/{CacheSize} images", 
-            windowStart, windowEnd, _cache.Count, _cacheSize);
     }
 
     /// <summary>
